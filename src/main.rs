@@ -131,8 +131,7 @@ fn get_compressed_file_size<P: AsRef<Path>>(p: P) -> std::io::Result<u64> {
     if ret == INVALID_FILE_SIZE && unsafe { GetLastError() != NO_ERROR } {
         Err(std::io::Error::last_os_error())
     } else {
-        let size: u64 = (u64::from(rest) << 32) | u64::from(ret);
-        Ok(size)
+        Ok(u64::from(rest) << 32 | u64::from(ret))
     }
 }
 
