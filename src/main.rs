@@ -4,6 +4,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use filesize::file_real_size;
 use glob::{MatchOptions, Pattern};
 use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
@@ -104,7 +105,7 @@ impl DirectorySize {
 
             if let Ok(md) = entry.metadata() {
                 let logical = md.len();
-                if let Ok(physical) = get_compressed_file_size(entry.path()) {
+                if let Ok(physical) = file_real_size(entry.path()) {
                     ds.logical_size += logical;
                     ds.physical_size += physical;
 
@@ -121,25 +122,6 @@ impl DirectorySize {
         }
 
         ds
-    }
-}
-
-fn get_compressed_file_size<P: AsRef<Path>>(p: P) -> std::io::Result<u64> {
-    use std::os::windows::ffi::OsStrExt;
-    use winapi::shared::winerror::NO_ERROR;
-    use winapi::um::errhandlingapi::GetLastError;
-    use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
-
-    let mut path: Vec<u16> = std::ffi::OsString::from("\\\\?\\").encode_wide().collect();
-    path.extend(p.as_ref().as_os_str().encode_wide());
-    path.push(0);
-    let mut rest: u32 = 0;
-    let ret = unsafe { GetCompressedFileSizeW(path.as_ptr(), &mut rest) };
-
-    if ret == INVALID_FILE_SIZE && unsafe { GetLastError() != NO_ERROR } {
-        Err(std::io::Error::last_os_error())
-    } else {
-        Ok(u64::from(rest) << 32 | u64::from(ret))
     }
 }
 

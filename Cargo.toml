@@ -8,5 +8,6 @@ edition = "2018"
 ignore = "0.4"
 #nfd = "0.0.4"
 #iui = "0.3"
-winapi = { version = ">= 0.3.7" }
+#winapi = { version = ">= 0.3.7" }
 glob = "0.3"
+filesize = "0.1"
