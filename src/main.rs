@@ -1,11 +1,10 @@
-
-use std::process::{Command, Stdio};
-use std::io::BufReader;
-use std::io::BufRead;
 use std::ffi::OsStr;
-use std::path::{PathBuf, Path};
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 
-use glob::{Pattern, MatchOptions};
+use glob::{MatchOptions, Pattern};
 use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 
@@ -13,7 +12,7 @@ use ignore::WalkBuilder;
 struct Compact {
     compression: Compression,
     force: bool,
-    hidden_files: bool
+    hidden_files: bool,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -21,7 +20,7 @@ enum Compression {
     Xpress4,
     Xpress8,
     Xpress16,
-    Lzx
+    Lzx,
 }
 
 impl Default for Compression {
@@ -52,12 +51,19 @@ impl Compact {
             .spawn()
             .map_err(|e| format!("compact.exe failure: {:?}", e))?;
 
-        let out = BufReader::new(child.stdout.take().ok_or_else(|| "compact.exe: stdio".to_string())?);
+        let out = BufReader::new(
+            child
+                .stdout
+                .take()
+                .ok_or_else(|| "compact.exe: stdio".to_string())?,
+        );
         for line in out.lines() {
             println!("Compact: {}", line.unwrap_or_default());
         }
 
-        let status = child.wait().map_err(|e| format!("compact.exe exit: {:?}", e))?;
+        let status = child
+            .wait()
+            .map_err(|e| format!("compact.exe exit: {:?}", e))?;
         dbg!(status);
         Ok(())
     }
@@ -67,7 +73,7 @@ impl Compact {
 struct DirectorySize {
     logical_size: u64,
     physical_size: u64,
-    candidate_files: Vec<PathBuf>
+    candidate_files: Vec<PathBuf>,
 }
 
 impl DirectorySize {
@@ -82,7 +88,7 @@ impl DirectorySize {
         let skip_glob_opts = MatchOptions {
             case_sensitive: false,
             require_literal_separator: false,
-            require_literal_leading_dot: false
+            require_literal_leading_dot: false,
         };
 
         for entry in walker {
@@ -103,7 +109,9 @@ impl DirectorySize {
                     ds.physical_size += physical;
 
                     // TODO: evaluate this cut-off
-                    if ds.logical_size < 4096 || skip_glob.matches_path_with(entry.path(), skip_glob_opts) {
+                    if ds.logical_size < 4096
+                        || skip_glob.matches_path_with(entry.path(), skip_glob_opts)
+                    {
                         continue;
                     }
 
@@ -117,10 +125,10 @@ impl DirectorySize {
 }
 
 fn get_compressed_file_size<P: AsRef<Path>>(p: P) -> std::io::Result<u64> {
-    use winapi::um::errhandlingapi::GetLastError;
-    use winapi::shared::winerror::NO_ERROR;
-    use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
     use std::os::windows::ffi::OsStrExt;
+    use winapi::shared::winerror::NO_ERROR;
+    use winapi::um::errhandlingapi::GetLastError;
+    use winapi::um::fileapi::{GetCompressedFileSizeW, INVALID_FILE_SIZE};
 
     let mut path: Vec<u16> = std::ffi::OsString::from("\\\\?\\").encode_wide().collect();
     path.extend(p.as_ref().as_os_str().encode_wide());
