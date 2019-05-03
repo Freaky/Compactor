@@ -1,0 +1,12 @@
+[package]
+name = "compactor"
+version = "0.1.0"
+authors = ["Thomas Hurst <tom@hur.st>"]
+edition = "2018"
+
+[dependencies]
+ignore = "0.4"
+#nfd = "0.0.4"
+#iui = "0.3"
+winapi = { version = ">= 0.3.7" }
+glob = "0.3"
