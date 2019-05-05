@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -6,18 +8,17 @@ use std::process::{Command, Stdio};
 
 use filesize::file_real_size;
 use glob::{MatchOptions, Pattern};
-use ignore::overrides::OverrideBuilder;
 use ignore::WalkBuilder;
 
 #[derive(Debug, Clone, Default)]
-struct Compact {
+pub struct Compact {
     compression: Compression,
     force: bool,
     hidden_files: bool,
 }
 
 #[derive(Debug, Copy, Clone)]
-enum Compression {
+pub enum Compression {
     Xpress4,
     Xpress8,
     Xpress16,
@@ -70,20 +71,26 @@ impl Compact {
     }
 }
 
-#[derive(Debug, Default)]
-struct DirectorySize {
-    logical_size: u64,
-    physical_size: u64,
-    candidate_files: Vec<PathBuf>,
+#[derive(Debug, Clone)]
+pub struct FolderInfo {
+    pub path: PathBuf,
+    pub logical_size: u64,
+    pub physical_size: u64,
+    pub compressable: Vec<PathBuf>,
+    pub compressed: Vec<PathBuf>,
+    pub skipped: Vec<PathBuf>,
 }
 
-impl DirectorySize {
+impl FolderInfo {
     fn evaluate<P: AsRef<Path>>(path: P) -> Self {
-        let walker = WalkBuilder::new(path.as_ref())
-            .standard_filters(false)
-            .build();
-
-        let mut ds = Self::default();
+        let mut ds = Self {
+            path: path.as_ref().to_path_buf(),
+            logical_size: 0,
+            physical_size: 0,
+            compressable: vec![],
+            compressed: vec![],
+            skipped: vec![]
+        };
 
         let skip_glob = Pattern::new("*.{7z,aac,avi,bik,bmp,br,bz2,cab,dl_,docx,flac,flv,gif,gz,jpeg,jpg,lz4,lzma,lzx,m2v,m4v,mkv,mp3,mp4,mpg,ogg,onepkg,png,pptx,rar,vob,vssx,vstx,wma,wmf,wmv,xap,xlsx,xz,zip,zst,zstd}").unwrap();
         let skip_glob_opts = MatchOptions {
@@ -92,32 +99,27 @@ impl DirectorySize {
             require_literal_leading_dot: false,
         };
 
-        for entry in walker {
-            if entry.is_err() {
-                eprintln!("Error: {:?}", entry);
-                continue;
-            }
+        let walker = WalkBuilder::new(path.as_ref())
+            .standard_filters(false)
+            .build()
+            .filter_map(|e| e.map_err(|e| eprintln!("Error: {:?}", e)).ok())
+            .filter_map(|e| e.metadata().map(|md| (e, md)).ok())
+            .filter(|(_, md)| md.is_file())
+            .filter_map(|(e, md)| file_real_size(e.path()).map(|s| (e, md, s)).ok());
 
-            let entry = entry.unwrap();
-            if !entry.file_type().map(|f| f.is_file()).unwrap_or_default() {
-                continue;
-            }
+        for (entry, metadata, physical) in walker {
+            let logical = metadata.len();
+            ds.logical_size += logical;
+            ds.physical_size += physical;
 
-            if let Ok(md) = entry.metadata() {
-                let logical = md.len();
-                if let Ok(physical) = file_real_size(entry.path()) {
-                    ds.logical_size += logical;
-                    ds.physical_size += physical;
+            let shortname = entry.path().strip_prefix(&path).unwrap_or_else(|_e| entry.path()).to_path_buf();
 
-                    // TODO: evaluate this cut-off
-                    if ds.logical_size < 4096
-                        || skip_glob.matches_path_with(entry.path(), skip_glob_opts)
-                    {
-                        continue;
-                    }
-
-                    ds.candidate_files.push(entry.path().to_path_buf());
-                }
+            if physical < logical {
+                ds.compressed.push(shortname);
+            } else if ds.logical_size > 4096 && !skip_glob.matches_path_with(entry.path(), skip_glob_opts) {
+                ds.compressable.push(shortname);
+            } else {
+                ds.skipped.push(shortname);
             }
         }
 
@@ -125,14 +127,50 @@ impl DirectorySize {
     }
 }
 
-use std::time::Instant;
+mod gui;
+
+use crossbeam_channel::{bounded, Sender, Receiver};
+
+pub enum GuiActions {
+    SetCompression(Compression),
+    SelectFolder(PathBuf),
+    Compress,
+    Decompress,
+    Pause,
+    Continue,
+    Cancel,
+    Quit
+}
+
+pub enum GuiResponses {
+    FolderStatus(FolderInfo),
+    Output(String),
+    Exit
+}
+
+fn spawn_worker(background_rx: Receiver<GuiActions>, gui_tx: Sender<GuiResponses>) -> std::thread::JoinHandle<()> {
+    std::thread::spawn(|| {
+        let mut compression = Compression::default();
+
+        for action in background_rx {
+            match action {
+                GuiActions::SetCompression(comp) => { compression = comp; },
+                GuiActions::SelectFolder(path) => {},
+                GuiActions::Compress => {},
+                GuiActions::Decompress => {},
+                GuiActions::Pause => {},
+                GuiActions::Continue => {},
+                GuiActions::Cancel => {},
+                GuiActions::Quit => {},
+            }
+        }
+    })
+}
 
 fn main() {
-    // evaluate_directory("D:\\test\\AIWar");
-    let dir = DirectorySize::evaluate("D:\\test\\");
-    println!("{:?}", dir);
-    let compact = Compact::default();
-    let start = Instant::now();
-    dbg!(compact.compact_files(&dir.candidate_files[..]));
-    println!("Exit in {:?}", start.elapsed());
+    let (background_tx, background_rx) = bounded::<GuiActions>(1024);
+    let (gui_tx, gui_rx) = bounded::<GuiResponses>(1024);
+
+    let worker = spawn_worker(background_rx, gui_tx);
+    gui::spawn_gui(background_tx, gui_rx).unwrap();
 }

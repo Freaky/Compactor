@@ -1,3 +1,7 @@
+use crate::GuiResponses;
+use crate::GuiActions;
+use crossbeam_channel::Sender;
+use crossbeam_channel::Receiver;
 use web_view::*;
 
 use winapi::shared::winerror;
@@ -10,14 +14,42 @@ use winapi::um::winnt;
 
 use std::path::PathBuf;
 
-const HTML: &str = include_str!("ui.html");
+const HTML_HEAD: &str = include_str!("ui/head.html");
+const HTML_CSS: &str = include_str!("ui/style.css");
+const HTML_JS_DEPS: &str = include_str!("ui/deps.js");
+const HTML_JS_APP: &str = include_str!("ui/app.js");
+const HTML_REST: &str = include_str!("ui/rest.html");
 
-pub fn spawn_gui() -> WVResult {
+fn escape_html_into(text: &str, out: &mut String) {
+
+    for c in text.chars() {
+        match c {
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '&' => out.push_str("&amp;"),
+            '\'' => out.push_str("&#39;"),
+            '"' => out.push_str("&quot;"),
+            _ => out.push(c)
+        };
+    }
+}
+
+pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponses>) -> WVResult {
     set_dpi_aware();
+
+    let mut html = String::new();
+    html.push_str(HTML_HEAD);
+    html.push_str("<style>\n");
+    escape_html_into(HTML_CSS, &mut html);
+    html.push_str("\n</style><script>\n");
+    escape_html_into(HTML_JS_DEPS, &mut html);
+    escape_html_into(HTML_JS_APP, &mut html);
+    html.push_str("\n</script>\n");
+    html.push_str(HTML_REST);
 
     let webview = web_view::builder()
         .title("Compactor")
-        .content(Content::Html(HTML))
+        .content(Content::Html(html))
         .size(800, 600)
         .resizable(true)
         .debug(true)
