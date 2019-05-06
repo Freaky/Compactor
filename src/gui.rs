@@ -20,6 +20,7 @@ const HTML_JS_DEPS: &str = include_str!("ui/cash.min.js");
 const HTML_JS_APP: &str = include_str!("ui/app.js");
 const HTML_REST: &str = include_str!("ui/rest.html");
 
+/*
 fn escape_html_into(text: &str, out: &mut String) {
     for c in text.chars() {
         match c {
@@ -32,6 +33,7 @@ fn escape_html_into(text: &str, out: &mut String) {
         };
     }
 }
+*/
 
 pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponses>) {
     set_dpi_aware();
@@ -39,19 +41,19 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
     let mut html = String::new();
     html.push_str(HTML_HEAD);
     html.push_str("<style>\n");
-    escape_html_into(HTML_CSS, &mut html);
+    html.push_str(HTML_CSS);
     html.push_str("\n</style><script>\n");
-    // escape_html_into(HTML_JS_DEPS, &mut html);
-    // escape_html_into(HTML_JS_APP, &mut html);
     html.push_str(HTML_JS_DEPS);
     html.push_str(HTML_JS_APP);
     html.push_str("\n</script>\n");
     html.push_str(HTML_REST);
 
+    std::fs::write("test.html", &html).unwrap();
+
     let webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
-        .size(800, 600)
+        .size(1000, 900)
         .resizable(true)
         .debug(true)
         .user_data(())
@@ -65,7 +67,10 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
                             .warning("Warning", "You didn't choose a file.")?,
                     };
                 },
-                _ => unimplemented!()
+                _ if arg.starts_with("http") => {
+                    open_url(arg);
+                },
+                _ => { println!("Invoke: {}", arg); }
             }
             Ok(())
         })
@@ -88,6 +93,10 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
 
     let _ = webview.run();
     gui_thread.join();
+}
+
+fn open_url<U: AsRef<str>>(url: U) {
+    let _ = open::that(url.as_ref());
 }
 
 fn set_dpi_aware() {

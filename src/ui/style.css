@@ -1,34 +1,101 @@
 body {
   font-family: "Helvetica Neue",Helvetica,Arial,serif;
-  background-color: rgb(51, 51, 51);
   color: #eee;
+  background-color: rgb(61, 61, 61);
   margin: 0; padding: 0;
 }
 
+header {
+  display: flex;
+  border-bottom: 1px solid black;
+  background-color: rgb(51, 51, 51);
+}
+
+header .push {
+  margin-left: auto;
+}
+
+progress, textarea {
+  margin: 8px;
+}
+
+.breakdown {
+  position: relative;
+  padding: 0;
+}
+
+.breakdown div {
+  height: 20px;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+
 h1 {
-  font-family: Tahoma, sans-serif;
+  text-transform: uppercase;
+  font-family: Impact, Oswald, Tahoma, sans-serif;
   font-weight: lighter;
   margin: 0;
   padding: 6px;
-  border-bottom: 1px solid black;
-  text-align: center;
   background-color: #333;
 }
 
-h1 span {
+h1 span.side {
   font-size: larger;
   font-weight: normal;
   color: #666;
 }
 
-section {
-  display: flex;
-  justify-content: center;
-  margin: 16px;
+h1 span.sml {
+  font-size: smaller;
 }
 
-section#About {
+#Button_Folder span {
+  color: #888;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+#Button_Folder {
+  width: 70%;
+}
+
+a, a:visited {
+  color: #229af7;
+  text-decoration: none;
+}
+
+a:active, a:hover {
+  color: #44abf9;
+  text-decoration: underline;
+}
+
+section button.cancel {
+  background-color: rgb(217, 83, 79);
+}
+
+section button.pause {
+  background-color: rgb(91, 192, 222);
+}
+
+progress {
+  height: 20px;
+  width: 90%;
+}
+
+section {
+  margin: 16px;
   display: block;
+}
+
+div.ctr {
+  display: flex;
+  justify-content: center;
+}
+
+#Analysis_Output {
+  width: 90%;
+  height: 10em;
 }
 
 #Start {
@@ -37,23 +104,20 @@ section#About {
 
 nav button {
   display: inline-block;
+  background-color: transparent;
   color: #fff;
-  background-color: #229af7;
-  border-color: #0079d6;
   font-size: 20px;
   padding: 10px;
-  border-width: 1px;
+  border-width: 0;
   cursor: pointer;
 }
 
 nav button.active {
-  background-color: transparent;
-  font-weight: bolder;
+  background-color: #229af7;
 }
 
 section button {
   font-size: larger;
-  width: 70%;
   color: #fff;
   background-color: #0079d6;
   border-color: #0079d6;
@@ -70,8 +134,7 @@ section button:hover, section button:active {
 
 ul {
   list-style-type: none;
-  display: flex;
-  justify-content: center;
+  display: block;
   margin: 0;
   padding: 0;
   width: 100%;

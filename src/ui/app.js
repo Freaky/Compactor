@@ -130,18 +130,28 @@ var Utils = (function() {
 var App = (function() {
 	return {
 		page: function(page) {
-			$("section.page").hide();
-			$("#" + page).show();
 			$("nav button").removeClass("active");
 			$("#Button_Page_" + page).addClass("active");
+			$("section.page").hide();
+			$("#" + page).show();
 		},
 
 		choose_folder: function() {
 			external.invoke('choose');
 		},
 
+		compress: function() {
+			external.invoke('compress');
+		},
+
 		scanning_folder: function(folder) {
 			$("#Button_Folder").text(folder);
 		},
+
+		boot: function() {
+			$("a[href]").on("click", function() { external.invoke($(this).attr("href")); return false; });
+		}
 	}
 })();
+
+$(document).ready(App.boot);

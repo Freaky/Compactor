@@ -1,21 +1,64 @@
   </head>
   <body>
-    <h1><span class="l">⇒</span> Compactor <span class="r">⇐</span></h1>
-    <nav>
-      <ul>
-        <li><button id="Button_Page_Compress" class="active" onclick="App.page('Compress')">Compress</button></li>
-        <li><button id="Button_Page_Settings" onclick="App.page('Settings')">Settings</button></li>
-        <li><button id="Button_Page_About" onclick="App.page('About')">About</button></li>
-      </ul>
-    </nav>
+    <header>
+      <h1><span class="side">⇒</span> C<span class="sml">o<span class="sml">m<span class="sml">p<span class="sml">a</span>c</span>t</span>o</span>r <span class="side">⇐</span></h1>
+      <div class="push"></div>
+      <nav>
+        <ul>
+          <li><button id="Button_Page_Compress" class="active" onclick="App.page('Compress')">⌛ Compact</button></li>
+          <li><button id="Button_Page_Settings" onclick="App.page('Settings')">☸ Settings</button></li>
+          <li><button id="Button_Page_About" onclick="App.page('About')">⌕ About</button></li>
+        </ul>
+      </nav>
+    </header>
 
     <section class="page" id="Compress">
       <section id="FolderChooser">
-        <button id="Button_Folder" onclick="App.choose_folder()">Choose Folder</button>
+        <div class="ctr">
+          <button id="Button_Folder" onclick="App.choose_folder()">D<span>❱</span>Games<span>❱</span>Steam<span>❱</span>steamapps<span>❱</span>common<span>❱</span>AI War 2</button>
+        </div>
       </section>
 
-      <section id="Analysis" style="display: none">
-        <textarea id="Analysis_Output"></textarea>
+      <section id="Activity">
+        <div id="Activity_Text">Scanning, found 6,321 files.</div>
+        <div class="ctr">
+          <progress id="Activity_Progress" style="width: 70%"></progress>
+          <button id="Button_Pause" class="pause" onclick="App.pause()">⏸️ Pause</button>
+          <button id="Button_Cancel" class="cancel" onclick="App.cancel()">⏹️ Cancel</button>
+        </div><br>
+      </section>
+
+      <section id="Analysis">
+        <label>Logical Size</label>: <span id="Size_Logical">2.4 GiB</span><br>
+        <div class="ctr"><progress id="Size_Uncompressed" max="100" value="100"></progress></div><br>
+        <label>Physical Size</label>: <span id="Size_Physical">1.4 GiB</span> (<span id="Compress_Ratio">0.58x</span>, <span id="Space_Saved">-1 GiB</span>)<br>
+        <div class="ctr"><progress id="Size_Compressed" max="100" value="73"></progress></div><br>
+        Compressed <span id="File_Count_Compressed">1,984</span> of <span id="File_Count_Incompressible">4,829</span> files.
+
+        <!--div class="breakdown">
+          <div class="compressed_physical" style="width: 25%;background: green;">&nbsp;</div>
+          <div class="compressed" style="width: 25%;background: blue;">&nbsp;</div>
+          <div class="uncompressed" style="width: 50%;background: red;">&nbsp;</div>
+        </div-->
+
+        <div class="ctr"><textarea id="Analysis_Output" readonly spellcheck="false" wrap="off">
+AIW2ModdingAndGUI\ProjectSettings\InputManager.asset (0.10x, 125447 -> 12288)
+AssetBundles_Win\arcencolors (0.11x, 90558103 -> 9859072)
+AIWar2_Data\Resources\unity default resources (0.12x, 3584332 -> 430080)
+AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\Afterburner.prefab (0.12x, 136281 -> 16384)
+AIW2ModdingAndGUI\Assets\Examples\Ship\Data_Center\Data\Data_Center_EmissFlowMap.png (0.12x, 32817 -> 4096)
+AIW2ModdingAndGUI\Assets\Examples\SceneData\UV_Outline_HD.tga (0.12x, 262162 -> 32768)
+AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\FireComplex.prefab (0.15x, 166257 -> 24576)
+AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\Fireworks.prefab (0.15x, 165576 -> 24576)
+AIW2ModdingAndGUI\Assets\ArcenSquads\Grids\1_Finger_Four80.prefab (0.15x, 165238 -> 24576)
+AIWar2_Data\Managed\UnityEngine.IMGUIModule.xml (0.16x, 290409 -> 45056)
+        </textarea></div>
+      </section>
+
+      <section id="Command">
+        <div class="ctr">
+          <button id="Button_Decompress">Decompress</button>
+        </div>
       </section>
     </section>
 
@@ -25,11 +68,24 @@
 
     <section class="page" id="About" style="display: none;">
       <p>
-        A tiny interface to <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact"><code>compact</code></a>.
+        A tiny interface to Microsoft's <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact"><code>compact.exe</code></a>.
       <p>
 
       <p>
-        Written in <a href="https://www.rust-lang.org/">Rust</a> by Thomas Hurst.
+        Written in <a href="https://www.rust-lang.org/">Rust</a> by <a href="https://hur.st/">Thomas Hurst</a>.
+      </p>
+
+      <p>
+        GUI provided by <a href="https://crates.io/crates/web-view">web-view</a>.  Welcome to the future where everything's
+        a web browser.  Yes, even you.
+      </p>
+
+      <p>
+        Source code is available at <a href="https://github.com/Freaky/compact">https://github.com/Freaky/compact</a>.
+      </p>
+
+      <p>
+        Please report any problems at <a href="https://github.com/Freaky/compact/issues">Github</a>.
       </p>
 
       <p>
