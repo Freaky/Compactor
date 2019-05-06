@@ -21,17 +21,37 @@ h1 span {
   color: #666;
 }
 
-.page {
+section {
   display: flex;
   justify-content: center;
   margin: 16px;
+}
+
+section#About {
+  display: block;
 }
 
 #Start {
   align-items: center;
 }
 
-.page button {
+nav button {
+  display: inline-block;
+  color: #fff;
+  background-color: #229af7;
+  border-color: #0079d6;
+  font-size: 20px;
+  padding: 10px;
+  border-width: 1px;
+  cursor: pointer;
+}
+
+nav button.active {
+  background-color: transparent;
+  font-weight: bolder;
+}
+
+section button {
   font-size: larger;
   width: 70%;
   color: #fff;
@@ -44,7 +64,7 @@ h1 span {
   cursor: pointer;
 }
 
-.page button:hover, .page button:active {
+section button:hover, section button:active {
   background-color: #2289e6;
 }
 

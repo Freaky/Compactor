@@ -16,12 +16,11 @@ use std::path::PathBuf;
 
 const HTML_HEAD: &str = include_str!("ui/head.html");
 const HTML_CSS: &str = include_str!("ui/style.css");
-const HTML_JS_DEPS: &str = include_str!("ui/deps.js");
+const HTML_JS_DEPS: &str = include_str!("ui/cash.min.js");
 const HTML_JS_APP: &str = include_str!("ui/app.js");
 const HTML_REST: &str = include_str!("ui/rest.html");
 
 fn escape_html_into(text: &str, out: &mut String) {
-
     for c in text.chars() {
         match c {
             '<' => out.push_str("&lt;"),
@@ -34,7 +33,7 @@ fn escape_html_into(text: &str, out: &mut String) {
     }
 }
 
-pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponses>) -> WVResult {
+pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponses>) {
     set_dpi_aware();
 
     let mut html = String::new();
@@ -42,8 +41,10 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
     html.push_str("<style>\n");
     escape_html_into(HTML_CSS, &mut html);
     html.push_str("\n</style><script>\n");
-    escape_html_into(HTML_JS_DEPS, &mut html);
-    escape_html_into(HTML_JS_APP, &mut html);
+    // escape_html_into(HTML_JS_DEPS, &mut html);
+    // escape_html_into(HTML_JS_APP, &mut html);
+    html.push_str(HTML_JS_DEPS);
+    html.push_str(HTML_JS_APP);
     html.push_str("\n</script>\n");
     html.push_str(HTML_REST);
 
@@ -68,9 +69,25 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
             }
             Ok(())
         })
-        .build()?;
+        .build().expect("WebView");
 
-    webview.run()
+    let handle = webview.handle();
+
+    let gui_thread = std::thread::spawn(move || {
+        for event in gui_rx {
+            match event {
+                GuiResponses::FolderStatus(fi) => { handle.dispatch(|wv| wv.eval("App.folder_status('test');")).expect("dispatch"); },
+                GuiResponses::Output(String) => { handle.dispatch(|wv| wv.eval("App.output('test');")).expect("dispatch"); },
+                GuiResponses::Exit => {
+                    handle.dispatch(|wv| { wv.terminate(); Ok(()) }).expect("dispatch");
+                    break;
+                },
+            }
+        }
+    });
+
+    let _ = webview.run();
+    gui_thread.join();
 }
 
 fn set_dpi_aware() {

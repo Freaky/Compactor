@@ -3,16 +3,39 @@
     <h1><span class="l">⇒</span> Compactor <span class="r">⇐</span></h1>
     <nav>
       <ul>
-        <li id="compress_select"><button onclick="page('compress')">Compress</button></li>
-        <li id="settings_select"><button onclick="page('settings')">Settings</button></li>
-        <li id="about_select"><button onclick="page('about')">About</button></li>
+        <li><button id="Button_Page_Compress" class="active" onclick="App.page('Compress')">Compress</button></li>
+        <li><button id="Button_Page_Settings" onclick="App.page('Settings')">Settings</button></li>
+        <li><button id="Button_Page_About" onclick="App.page('About')">About</button></li>
       </ul>
-    <div class="page" id="Start">
-      <button onclick="external.invoke('choose')">Choose Directory</button>
-    </div>
+    </nav>
 
-    <div class="page" id="Analysis">
-      <button onclick="external.invoke('choose')">Choose Directory</button>
-    </div>
+    <section class="page" id="Compress">
+      <section id="FolderChooser">
+        <button id="Button_Folder" onclick="App.choose_folder()">Choose Folder</button>
+      </section>
+
+      <section id="Analysis" style="display: none">
+        <textarea id="Analysis_Output"></textarea>
+      </section>
+    </section>
+
+    <section class="page" id="Settings" style="display: none;">
+      <p>One day, you'll be able to fiddle with things here.</p>
+    </section>
+
+    <section class="page" id="About" style="display: none;">
+      <p>
+        A tiny interface to <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact"><code>compact</code></a>.
+      <p>
+
+      <p>
+        Written in <a href="https://www.rust-lang.org/">Rust</a> by Thomas Hurst.
+      </p>
+
+      <p>
+        This program is provided as-is, with no warranty expressed or implied.
+        If it breaks your computer, your computer was already broken.
+      </p>
+    </section>
   </body>
 </html>

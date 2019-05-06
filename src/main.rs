@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 
 use std::ffi::OsStr;
 use std::io::BufRead;
@@ -172,5 +172,5 @@ fn main() {
     let (gui_tx, gui_rx) = bounded::<GuiResponses>(1024);
 
     let worker = spawn_worker(background_rx, gui_tx);
-    gui::spawn_gui(background_tx, gui_rx).unwrap();
+    gui::spawn_gui(background_tx, gui_rx);
 }
