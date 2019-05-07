@@ -56,7 +56,7 @@ enum GuiRequest {
     Compress,
     Decompress,
     Pause,
-    Continue,
+    Resume,
     Cancel,
     Quit,
 }
@@ -132,6 +132,7 @@ pub fn spawn_gui() {
         .expect("WebView");
 
     webview.run().expect("webview");
+    println!("Exiting");
 }
 
 fn response_dispatch<T>(webview: &mut web_view::WebView<'_, T>, response: GuiResponse) -> WVResult {

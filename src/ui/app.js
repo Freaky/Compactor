@@ -1,4 +1,4 @@
-var Utils = (function() {
+var Util = (function() {
 	var powers = '_KMGTPEZY';
 	var monotime = function() { return Date.now(); };
 
@@ -56,32 +56,30 @@ var Utils = (function() {
 
 		format_number: function(number, digits) {
 			if (digits === undefined) digits = 2;
-			return '<span class="number">' + number.toLocaleString("en", {maximumFractionDigits: digits}).split(',').join('<span></span><wbr>') + '</span>';
+			return number.toLocaleString("en", {maximumFractionDigits: digits});
 		},
 
-		bits_to_human: function(bits) {
-			var bytes = Math.round(bits / 8);
-
+		bytes_to_human: function(bytes) {
 			for (var i = powers.length - 1; i > 0; i--) {
 				var div = Math.pow(2, 10*i);
 				if (bytes >= div) {
-					return Utils.format_number(bytes / div, 2) + powers[i] + 'iB';
+					return Util.format_number(bytes / div, 2) + powers[i] + 'iB';
 				}
 			}
 
-			return Utils.format_number(bytes) + 'B';
+			return Util.format_number(bytes) + 'B';
 		},
 
-		human_to_bits: function(human) {
+		human_to_bytes: function(human) {
 			if (!human) return null;
 			var num = parseFloat(human);
 
 			var match = (/\s*([KMGTPEZY])(i)?([Bb])?\s*$/i).exec(human);
 			if (match) {
 				var pow = (match[2] == 'i') ? 1024 : 1000;
-				var mul = (match[3] == 'B') ? 8 : 1;
+				// var mul = (match[3] == 'B') ? 8 : 1;
 
-				num *= mul * Math.pow(pow, powers.indexOf(match[1].toUpperCase()));
+				num *= Math.pow(pow, powers.indexOf(match[1].toUpperCase()));
 			}
 
 			return num;
@@ -91,7 +89,7 @@ var Utils = (function() {
 			for (var i = powers.length - 1; i > 0; i--) {
 				var div = Math.pow(10, 3*i);
 				if (num >= div) {
-					return Utils.format_number(num / div, 2) + powers[i];
+					return Util.format_number(num / div, 2) + powers[i];
 				}
 			}
 
@@ -151,7 +149,7 @@ var Action = (function() {
 		},
 
 		continue: function() {
-			external.invoke(JSON.stringify({ type: 'Continue' }));
+			external.invoke(JSON.stringify({ type: 'Resume' }));
 		},
 
 		cancel: function() {
@@ -178,6 +176,7 @@ var Response = (function() {
 					break;
 
 				case "FolderInfo":
+					Gui.set_folder_info(msg.info);
 					break;
 			}
 		}
@@ -203,27 +202,69 @@ var Gui = (function() {
 		},
 
 		set_folder: function(folder) {
-			var button = $("#Button_Folder");
-			var bits = folder.split(/:\\|\\/);
+			// I swear this worked earlier :(
+			// var bits = folder.split(/:\\|\\/).map(document.createTextNode);
+			var bits = folder.split(/:\\|\\/).map(function(x) { return document.createTextNode(x); });
 			var end = bits.pop();
 
+			var button = $("#Button_Folder");
 			button.empty();
 			bits.forEach(function(bit) {
-				button.append(document.createTextNode(bit));
+				button.append(bit);
 				button.append($("<span>❱</span>"));
 			});
+			button.append(end);
 
-			button.append(document.createTextNode(end));
+			Gui.reset_folder_info();
+
+			$("#Activity").show();
+			$("#Analysis").show();
+			$("#Command").hide();
 
 			// why use a one-liner when you can faff about?
 			// $("#Button_Folder").text(folder);
 		},
 
-		status_update: function(data) {
+		set_progress: function(status, pct) {
+			$("#Activity_Text").text(status);
+			$("#Activity_Progress").val(pct);
 		},
 
-		analysis_results: function(data) {
+		reset_folder_info: function() {
+			Gui.set_folder_info({
+				logical_size: 0,
+				physical_size: 0,
+				compressed: 0,
+				compressible: 0,
+				skipped: 0
+			});
 		},
+
+		set_folder_info: function(data) {
+			$("#Size_Logical").text(Util.bytes_to_human(data.logical_size));
+			$("#Size_Physical").text(Util.bytes_to_human(data.physical_size));
+
+			if (data.physical_size > 0) {
+				var ratio = (data.logical_size / data.physical_size);
+				$("#Compress_Ratio").text(ratio.toFixed(2));
+				$("#Size_Compressed").val(ratio);
+			} else {
+				$("#Compress_Ratio").text("1.00");
+				$("#Size_Compressed").val(1);
+			}
+
+			$("#Space_Saved").text(Util.bytes_to_human(data.logical_size - data.physical_size));
+
+			$("#File_Count_Compressed").text(Util.format_number(data.compressed));
+			$("#File_Count_Compressible").text(Util.format_number(data.compressible));
+			$("#File_Count_Skipped").text(Util.format_number(data.skipped));
+		},
+
+		analysis_complete: function() {
+			$("#Activity").hide();
+			$("#Analysis").show();
+			$("#Command").show();
+		}
 	};
 })();
 

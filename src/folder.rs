@@ -17,18 +17,39 @@ pub struct FolderInfo {
     pub path: PathBuf,
     pub logical_size: u64,
     pub physical_size: u64,
-    pub compressable: Vec<FileInfo>,
+    pub compressible: Vec<FileInfo>,
     pub compressed: Vec<FileInfo>,
     pub skipped: Vec<FileInfo>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct FolderSummary {
+    pub path: PathBuf,
+    pub logical_size: u64,
+    pub physical_size: u64,
+    pub compressible: usize,
+    pub compressed: usize,
+    pub skipped: usize,
+}
+
 impl FolderInfo {
+    pub fn summary(&self) -> FolderSummary {
+        FolderSummary {
+            path: self.path.clone(),
+            logical_size: self.logical_size,
+            physical_size: self.physical_size,
+            compressible: self.compressible.len(),
+            compressed: self.compressed.len(),
+            skipped: self.skipped.len(),
+        }
+    }
+
     pub fn evaluate<P: AsRef<Path>>(path: P) -> Self {
         let mut ds = Self {
             path: path.as_ref().to_path_buf(),
             logical_size: 0,
             physical_size: 0,
-            compressable: vec![],
+            compressible: vec![],
             compressed: vec![],
             skipped: vec![],
         };
@@ -73,7 +94,7 @@ impl FolderInfo {
                     .map(|ext| skip_exts.iter().any(|ex| ex.eq_ignore_ascii_case(ext)))
                     .unwrap_or_default()
             {
-                ds.compressable.push(fi);
+                ds.compressible.push(fi);
             } else {
                 ds.skipped.push(fi);
             }

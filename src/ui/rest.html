@@ -15,33 +15,36 @@
     <section class="page" id="Compress">
       <section id="FolderChooser">
         <div class="ctr">
-          <button id="Button_Folder" onclick="Action.choose_folder()">D<span>❱</span>Games<span>❱</span>Steam<span>❱</span>steamapps<span>❱</span>common<span>❱</span>AI War 2</button>
+          <button id="Button_Folder" onclick="Action.choose_folder()">Choose a folder</button>
         </div>
       </section>
 
-      <section id="Activity">
-        <div id="Activity_Text">Scanning, found 6,321 files.</div>
+      <section id="Activity" style="display: none;">
+        <div id="Activity_Text"></div>
         <div class="ctr">
-          <progress id="Activity_Progress" style="width: 70%"></progress>
+          <progress id="Activity_Progress" style="width: 70%;"></progress>
           <button id="Button_Pause" class="pause" onclick="Action.pause()">⏸️ Pause</button>
+          <button id="Button_Resume" class="resume" onclick="Action.resume()">▶️ Resume</button>
           <button id="Button_Cancel" class="cancel" onclick="Action.cancel()">⏹️ Cancel</button>
         </div>
       </section>
 
-      <section id="Command">
+      <section id="Command" style="display: none;">
         <div class="ctr">
-          <button id="Button_Decompress" onclick="Action.compress()">⇐ Compress ⇒</button>
+          <button id="Button_Compress" onclick="Action.compress()">⇐ Compress ⇒</button>
           <button id="Button_Decompress" onclick="Action.decompress()">⇐ Decompress ⇒</button>
         </div>
       </section>
 
-      <section id="Analysis">
+      <section id="Analysis" style="display: none;">
         <label>Logical Size</label>: <span id="Size_Logical">2.4 GiB</span><br>
-        <div class="ctr"><progress id="Size_Uncompressed" max="100" value="100"></progress></div><br>
-        <label>Physical Size</label>: <span id="Size_Physical">1.4 GiB</span> (<span id="Compress_Ratio">0.58x</span>, <span id="Space_Saved">-1 GiB</span>)<br>
-        <div class="ctr"><progress id="Size_Compressed" max="100" value="73"></progress></div><br>
-        Compressed <span id="File_Count_Compressed">1,984</span> of <span id="File_Count_Incompressible">4,829</span> files.
-
+        <div class="ctr"><progress id="Size_Uncompressed" value="1"></progress></div><br>
+        <label>Physical Size</label>: <span id="Size_Physical">1.4 GiB</span> (<span id="Compress_Ratio">0.58</span>x, <span id="Space_Saved">-1 GiB</span>)<br>
+        <div class="ctr"><progress id="Size_Compressed" value="1"></progress></div><br>
+        <span id="File_Count_Compressed">1,984</span> compressed,
+        <span id="File_Count_Compressible">4,829</span> compressible,
+        <span id="File_Count_Skipped">496</span> incompressible files.
+<!-- 
         <div class="ctr"><textarea id="Analysis_Output" readonly spellcheck="false" wrap="off">
 AIW2ModdingAndGUI\ProjectSettings\InputManager.asset (0.10x, 125447 -> 12288)
 AssetBundles_Win\arcencolors (0.11x, 90558103 -> 9859072)
@@ -53,7 +56,7 @@ AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\FireComplex.pre
 AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\Fireworks.prefab (0.15x, 165576 -> 24576)
 AIW2ModdingAndGUI\Assets\ArcenSquads\Grids\1_Finger_Four80.prefab (0.15x, 165238 -> 24576)
 AIWar2_Data\Managed\UnityEngine.IMGUIModule.xml (0.16x, 290409 -> 45056)
-        </textarea></div>
+        </textarea></div> -->
       </section>
     </section>
 
