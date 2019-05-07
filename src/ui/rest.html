@@ -5,9 +5,9 @@
       <div class="push"></div>
       <nav>
         <ul>
-          <li><button id="Button_Page_Compress" class="active" onclick="App.page('Compress')">⌛ Compact</button></li>
-          <li><button id="Button_Page_Settings" onclick="App.page('Settings')">☸ Settings</button></li>
-          <li><button id="Button_Page_About" onclick="App.page('About')">⌕ About</button></li>
+          <li><button id="Button_Page_Compress" class="active" onclick="Gui.page('Compress')">⌛ Compact</button></li>
+          <li><button id="Button_Page_Settings" onclick="Gui.page('Settings')">☸ Settings</button></li>
+          <li><button id="Button_Page_About" onclick="Gui.page('About')">⌕ About</button></li>
         </ul>
       </nav>
     </header>
@@ -15,7 +15,7 @@
     <section class="page" id="Compress">
       <section id="FolderChooser">
         <div class="ctr">
-          <button id="Button_Folder" onclick="App.choose_folder()">D<span>❱</span>Games<span>❱</span>Steam<span>❱</span>steamapps<span>❱</span>common<span>❱</span>AI War 2</button>
+          <button id="Button_Folder" onclick="Action.choose_folder()">D<span>❱</span>Games<span>❱</span>Steam<span>❱</span>steamapps<span>❱</span>common<span>❱</span>AI War 2</button>
         </div>
       </section>
 
@@ -23,9 +23,16 @@
         <div id="Activity_Text">Scanning, found 6,321 files.</div>
         <div class="ctr">
           <progress id="Activity_Progress" style="width: 70%"></progress>
-          <button id="Button_Pause" class="pause" onclick="App.pause()">⏸️ Pause</button>
-          <button id="Button_Cancel" class="cancel" onclick="App.cancel()">⏹️ Cancel</button>
-        </div><br>
+          <button id="Button_Pause" class="pause" onclick="Action.pause()">⏸️ Pause</button>
+          <button id="Button_Cancel" class="cancel" onclick="Action.cancel()">⏹️ Cancel</button>
+        </div>
+      </section>
+
+      <section id="Command">
+        <div class="ctr">
+          <button id="Button_Decompress" onclick="Action.compress()">⇐ Compress ⇒</button>
+          <button id="Button_Decompress" onclick="Action.decompress()">⇐ Decompress ⇒</button>
+        </div>
       </section>
 
       <section id="Analysis">
@@ -34,12 +41,6 @@
         <label>Physical Size</label>: <span id="Size_Physical">1.4 GiB</span> (<span id="Compress_Ratio">0.58x</span>, <span id="Space_Saved">-1 GiB</span>)<br>
         <div class="ctr"><progress id="Size_Compressed" max="100" value="73"></progress></div><br>
         Compressed <span id="File_Count_Compressed">1,984</span> of <span id="File_Count_Incompressible">4,829</span> files.
-
-        <!--div class="breakdown">
-          <div class="compressed_physical" style="width: 25%;background: green;">&nbsp;</div>
-          <div class="compressed" style="width: 25%;background: blue;">&nbsp;</div>
-          <div class="uncompressed" style="width: 50%;background: red;">&nbsp;</div>
-        </div-->
 
         <div class="ctr"><textarea id="Analysis_Output" readonly spellcheck="false" wrap="off">
 AIW2ModdingAndGUI\ProjectSettings\InputManager.asset (0.10x, 125447 -> 12288)
@@ -54,16 +55,67 @@ AIW2ModdingAndGUI\Assets\ArcenSquads\Grids\1_Finger_Four80.prefab (0.15x, 165238
 AIWar2_Data\Managed\UnityEngine.IMGUIModule.xml (0.16x, 290409 -> 45056)
         </textarea></div>
       </section>
-
-      <section id="Command">
-        <div class="ctr">
-          <button id="Button_Decompress">Decompress</button>
-        </div>
-      </section>
     </section>
 
     <section class="page" id="Settings" style="display: none;">
-      <p>One day, you'll be able to fiddle with things here.</p>
+      <fieldset><legend>Compression</legend><br>
+        <select id="Compression_Mode" name="Compression">
+          <option value="XPRESS4K">XPRESS4K (fast, low compression)</option>
+          <option value="XPRESS8K" selected>XPRESS8K (default)</option>
+          <option value="XPRESS16K">XPRESS16K</option>
+          <option value="LZX">LZX (slow, high compression)</option>
+        </select>
+      </fieldset>
+
+      <br>
+
+      <fieldset><legend>File patterns to exclude from compression</legend><br>
+        <textarea name="exclude" id="Excludes" spellcheck="false" wrap="off"
+>*:\Windows\*
+*.7z
+*.aac
+*.avi
+*.bik
+*.bmp
+*.br
+*.bz2
+*.cab
+*.dl_
+*.docx
+*.flac
+*.flv
+*.gif
+*.gz
+*.jpeg
+*.jpg
+*.lz4
+*.lzma
+*.lzx
+*.m2v
+*.m4v
+*.mkv
+*.mp[234]
+*.mpg
+*.ogg
+*.onepkg
+*.png
+*.pptx
+*.rar
+*.vob
+*.vs[st]x
+*.wm[afv]
+*.xap
+*.xlsx
+*.xz
+*.zip
+*.zst
+*.zstd</textarea>
+      </fieldset>
+
+      <br>
+
+      <button id="Button_Save" class="save">💾 Save</button>
+      <button id="Button_Reset" class="cancel">⏹️ Reset</button>
     </section>
 
     <section class="page" id="About" style="display: none;">

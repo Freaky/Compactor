@@ -19,18 +19,6 @@ progress, textarea {
   margin: 8px;
 }
 
-.breakdown {
-  position: relative;
-  padding: 0;
-}
-
-.breakdown div {
-  height: 20px;
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-}
-
 h1 {
   text-transform: uppercase;
   font-family: Impact, Oswald, Tahoma, sans-serif;
@@ -58,6 +46,13 @@ h1 span.sml {
 
 #Button_Folder {
   width: 70%;
+}
+
+input, textarea, select {
+  border: 1px solid black;
+  padding: 4px;
+  margin: 4px;
+  font-size: larger;
 }
 
 a, a:visited {
@@ -93,7 +88,7 @@ div.ctr {
   justify-content: center;
 }
 
-#Analysis_Output {
+textarea {
   width: 90%;
   height: 10em;
 }
@@ -120,7 +115,7 @@ section button {
   font-size: larger;
   color: #fff;
   background-color: #0079d6;
-  border-color: #0079d6;
+  border-color: transparent;
   font-size: 20px;
   padding: 10px;
   border-radius: 4px;

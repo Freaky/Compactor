@@ -1,12 +1,11 @@
-use crate::GuiResponses;
-use crate::GuiActions;
-use crossbeam_channel::Sender;
+use crate::folder::FolderInfo;
 use crossbeam_channel::Receiver;
+use crossbeam_channel::Sender;
 use web_view::*;
 
 use winapi::shared::winerror;
-use winapi::um::knownfolders;
 use winapi::um::combaseapi;
+use winapi::um::knownfolders;
 use winapi::um::shlobj;
 use winapi::um::shtypes;
 use winapi::um::winbase;
@@ -34,8 +33,44 @@ fn escape_html_into(text: &str, out: &mut String) {
     }
 }
 */
+// use crossbeam_channel::{bounded, Receiver, Sender};
 
-pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponses>) {
+use serde_derive::{Deserialize, Serialize};
+use serde_json;
+
+#[derive(Debug, Clone)]
+enum AppState {
+    Idle,
+    Scanning(PathBuf),
+    Waiting(FolderInfo),
+    Compressing(FolderInfo),
+    Decompressing(FolderInfo),
+}
+
+// messages received from the GUI
+#[derive(Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
+enum GuiRequest {
+    OpenUrl { url: String },
+    ChooseFolder,
+    Compress,
+    Decompress,
+    Pause,
+    Continue,
+    Cancel,
+    Quit,
+}
+
+// messages to send to the GUI
+#[derive(Serialize)]
+#[serde(tag = "type")]
+enum GuiResponse {
+    Folder { path: PathBuf },
+    Progress { status: String, pct: Option<u8> },
+    FolderInfo { info: FolderInfo },
+}
+
+pub fn spawn_gui() {
     set_dpi_aware();
 
     let mut html = String::new();
@@ -50,6 +85,8 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
 
     std::fs::write("test.html", &html).unwrap();
 
+    let mut state = AppState::Idle;
+
     let webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
@@ -57,42 +94,50 @@ pub fn spawn_gui(background_tx: Sender<GuiActions>, gui_rx: Receiver<GuiResponse
         .resizable(true)
         .debug(true)
         .user_data(())
-        .invoke_handler(|mut webview, arg| {
-            match arg {
-                "choose" => {
-                    match select_dir(&mut webview)? {
-                        Some(path) => webview.dialog().info("Dir", path.to_string_lossy())?,
-                        None => webview
-                            .dialog()
-                            .warning("Warning", "You didn't choose a file.")?,
-                    };
-                },
-                _ if arg.starts_with("http") => {
-                    open_url(arg);
-                },
-                _ => { println!("Invoke: {}", arg); }
-            }
+        .invoke_handler(move |mut webview, arg| {
+            let req: GuiRequest = match serde_json::from_str(arg) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("Unhandled invoke message {:?}: {:?}", arg, e);
+                    return Ok(());
+                }
+            };
+
+            match req {
+                GuiRequest::OpenUrl { url } => {
+                    open_url(url);
+                }
+                GuiRequest::ChooseFolder => {
+                    match state {
+                        AppState::Idle | AppState::Waiting(_) => {
+                            if let Some(dir) = select_dir(&mut webview)? {
+                                println!("Selected: {:?}", dir);
+                                response_dispatch(&mut webview, GuiResponse::Folder { path: dir.clone() })?;
+                                state = AppState::Scanning(dir);
+                            }
+                        },
+                        _ => {
+                            println!("Can't select folder in {:?}", state);
+                        }
+                    }
+                }
+                _ => {
+                    println!("Unhandled: {:?}", req);
+                }
+            };
+
             Ok(())
         })
-        .build().expect("WebView");
+        .build()
+        .expect("WebView");
 
-    let handle = webview.handle();
+    webview.run().expect("webview");
+}
 
-    let gui_thread = std::thread::spawn(move || {
-        for event in gui_rx {
-            match event {
-                GuiResponses::FolderStatus(fi) => { handle.dispatch(|wv| wv.eval("App.folder_status('test');")).expect("dispatch"); },
-                GuiResponses::Output(String) => { handle.dispatch(|wv| wv.eval("App.output('test');")).expect("dispatch"); },
-                GuiResponses::Exit => {
-                    handle.dispatch(|wv| { wv.terminate(); Ok(()) }).expect("dispatch");
-                    break;
-                },
-            }
-        }
-    });
-
-    let _ = webview.run();
-    gui_thread.join();
+fn response_dispatch<T>(webview: &mut web_view::WebView<'_, T>, response: GuiResponse) -> WVResult {
+    let js = &format!("Response.dispatch({})", serde_json::to_string(&response).expect("serialize"));
+    println!("Eval: {}", js);
+    webview.eval(&js)
 }
 
 fn open_url<U: AsRef<str>>(url: U) {
@@ -100,7 +145,7 @@ fn open_url<U: AsRef<str>>(url: U) {
 }
 
 fn set_dpi_aware() {
-    use winapi::um::shellscalingapi::{PROCESS_SYSTEM_DPI_AWARE, SetProcessDpiAwareness};
+    use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE};
 
     unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) };
 }
@@ -115,7 +160,8 @@ fn program_files() -> PathBuf {
 fn known_folder(folder_id: shtypes::REFKNOWNFOLDERID) -> Option<PathBuf> {
     unsafe {
         let mut path_ptr: winnt::PWSTR = std::ptr::null_mut();
-        let result = shlobj::SHGetKnownFolderPath(folder_id, 0, std::ptr::null_mut(), &mut path_ptr);
+        let result =
+            shlobj::SHGetKnownFolderPath(folder_id, 0, std::ptr::null_mut(), &mut path_ptr);
         if result == winerror::S_OK {
             let len = winbase::lstrlenW(path_ptr) as usize;
             let path = std::slice::from_raw_parts(path_ptr, len);
@@ -156,4 +202,3 @@ fn select_dir<T>(webview: &mut web_view::WebView<'_, T>) -> WVResult<Option<Path
         Ok(None)
     }
 }
-

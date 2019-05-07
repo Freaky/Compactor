@@ -1,4 +1,3 @@
-
 use std::path::{Path, PathBuf};
 
 use filesize::file_real_size;
@@ -31,10 +30,15 @@ impl FolderInfo {
             physical_size: 0,
             compressable: vec![],
             compressed: vec![],
-            skipped: vec![]
+            skipped: vec![],
         };
 
-        let skip_exts = vec!["7z", "aac", "avi", "bik", "bmp", "br", "bz2", "cab", "dl_", "docx", "flac", "flv", "gif", "gz", "jpeg", "jpg", "lz4", "lzma", "lzx", "m2v", "m4v", "mkv", "mp3", "mp4", "mpg", "ogg", "onepkg", "png", "pptx", "rar", "vob", "vssx", "vstx", "wma", "wmf", "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd"];
+        let skip_exts = vec![
+            "7z", "aac", "avi", "bik", "bmp", "br", "bz2", "cab", "dl_", "docx", "flac", "flv",
+            "gif", "gz", "jpeg", "jpg", "lz4", "lzma", "lzx", "m2v", "m4v", "mkv", "mp3", "mp4",
+            "mpg", "ogg", "onepkg", "png", "pptx", "rar", "vob", "vssx", "vstx", "wma", "wmf",
+            "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd",
+        ];
 
         let walker = WalkBuilder::new(path.as_ref())
             .standard_filters(false)
@@ -49,7 +53,11 @@ impl FolderInfo {
             ds.logical_size += logical;
             ds.physical_size += physical;
 
-            let shortname = entry.path().strip_prefix(&path).unwrap_or_else(|_e| entry.path()).to_path_buf();
+            let shortname = entry
+                .path()
+                .strip_prefix(&path)
+                .unwrap_or_else(|_e| entry.path())
+                .to_path_buf();
             let extension = entry.path().extension().and_then(std::ffi::OsStr::to_str);
 
             let fi = FileInfo {
@@ -60,14 +68,22 @@ impl FolderInfo {
 
             if physical < logical {
                 ds.compressed.push(fi);
-            } else if logical > 4096 && !extension.map(|ext| skip_exts.iter().any(|ex| ex.eq_ignore_ascii_case(ext))).unwrap_or_default() {
+            } else if logical > 4096
+                && !extension
+                    .map(|ext| skip_exts.iter().any(|ex| ex.eq_ignore_ascii_case(ext)))
+                    .unwrap_or_default()
+            {
                 ds.compressable.push(fi);
             } else {
                 ds.skipped.push(fi);
             }
         }
 
-        ds.compressed.sort_by(|a, b| (a.physical_size as f64 / a.logical_size as f64).partial_cmp(&(b.physical_size as f64 / b.logical_size as f64)).unwrap());
+        ds.compressed.sort_by(|a, b| {
+            (a.physical_size as f64 / a.logical_size as f64)
+                .partial_cmp(&(b.physical_size as f64 / b.logical_size as f64))
+                .unwrap()
+        });
 
         ds
     }

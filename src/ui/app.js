@@ -127,8 +127,74 @@ var Utils = (function() {
 	};
 })();
 
-var App = (function() {
+// Actions call back into Rust
+var Action = (function() {
 	return {
+		open_url: function(url) {
+			external.invoke(JSON.stringify({ type: 'OpenUrl', url: url }));
+		},
+
+		choose_folder: function() {
+			external.invoke(JSON.stringify({ type: 'ChooseFolder' }));
+		},
+
+		compress: function() {
+			external.invoke(JSON.stringify({ type: 'Compress' }));
+		},
+
+		decompress: function() {
+			external.invoke(JSON.stringify({ type: 'Decompress' }));
+		},
+
+		pause: function() {
+			external.invoke(JSON.stringify({ type: 'Pause' }));
+		},
+
+		continue: function() {
+			external.invoke(JSON.stringify({ type: 'Continue' }));
+		},
+
+		cancel: function() {
+			external.invoke(JSON.stringify({ type: 'Cancel' }));
+		},
+
+		quit: function() {
+			external.invoke(JSON.stringify({ type: 'Quit' }));
+		}
+	};
+})();
+
+// Responses come from Rust
+var Response = (function() {
+	return {
+		dispatch: function(msg) {
+			switch(msg.type) {
+				case "Folder":
+					Gui.set_folder(msg.path);
+					break;
+
+				case "Progress":
+					Gui.set_progress(msg.status, msg.pct);
+					break;
+
+				case "FolderInfo":
+					break;
+			}
+		}
+	};
+})();
+
+// Anything poking the GUI lives here
+var Gui = (function() {
+	return {
+		boot: function() {
+			$("a[href]").on("click", function(e) {
+				e.preventDefault();
+				Action.open_url($(this).attr("href"));
+				return false;
+			});
+		},
+
 		page: function(page) {
 			$("nav button").removeClass("active");
 			$("#Button_Page_" + page).addClass("active");
@@ -136,22 +202,29 @@ var App = (function() {
 			$("#" + page).show();
 		},
 
-		choose_folder: function() {
-			external.invoke('choose');
+		set_folder: function(folder) {
+			var button = $("#Button_Folder");
+			var bits = folder.split(/:\\|\\/);
+			var end = bits.pop();
+
+			button.empty();
+			bits.forEach(function(bit) {
+				button.append(document.createTextNode(bit));
+				button.append($("<span>❱</span>"));
+			});
+
+			button.append(document.createTextNode(end));
+
+			// why use a one-liner when you can faff about?
+			// $("#Button_Folder").text(folder);
 		},
 
-		compress: function() {
-			external.invoke('compress');
+		status_update: function(data) {
 		},
 
-		scanning_folder: function(folder) {
-			$("#Button_Folder").text(folder);
+		analysis_results: function(data) {
 		},
-
-		boot: function() {
-			$("a[href]").on("click", function() { external.invoke($(this).attr("href")); return false; });
-		}
-	}
+	};
 })();
 
-$(document).ready(App.boot);
+$(document).ready(Gui.boot);
