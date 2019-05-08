@@ -1,6 +1,4 @@
 use crate::folder::FolderInfo;
-use crossbeam_channel::Receiver;
-use crossbeam_channel::Sender;
 use web_view::*;
 
 use winapi::shared::winerror;
@@ -33,7 +31,7 @@ fn escape_html_into(text: &str, out: &mut String) {
     }
 }
 */
-// use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{bounded, Receiver, Sender};
 
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
@@ -70,6 +68,37 @@ enum GuiResponse {
     FolderInfo { info: FolderInfo },
 }
 
+/*
+fn coordinator_thread(from_gui: Receiver<GuiRequest>, to_gui: Sender<GuiResponse>) {
+    std::thread::spawn(move || {
+        for ev in from_gui {
+            match ev {
+                GuiRequest::OpenUrl { url } => {
+                    open_url(url);
+                }
+                GuiRequest::ChooseFolder => {
+                    match state {
+                        AppState::Idle | AppState::Waiting(_) => {
+                            if let Some(dir) = select_dir(&mut webview)? {
+                                println!("Selected: {:?}", dir);
+                                response_dispatch(&mut wv, GuiResponse::Folder { path: dir.clone() })?;
+                                state = AppState::Scanning(dir);
+                            }
+                        },
+                        _ => {
+                            println!("Can't select folder in {:?}", state);
+                        }
+                    }
+                }
+                _ => {
+                    println!("Unhandled: {:?}", req);
+                }
+            }
+        }
+    });
+}
+*/
+
 pub fn spawn_gui() {
     set_dpi_aware();
 
@@ -95,34 +124,10 @@ pub fn spawn_gui() {
         .debug(true)
         .user_data(())
         .invoke_handler(move |mut webview, arg| {
-            let req: GuiRequest = match serde_json::from_str(arg) {
-                Ok(r) => r,
+            let req = match serde_json::from_str::<GuiRequest>(arg) {
+                Ok(req) => { req; },
                 Err(e) => {
                     eprintln!("Unhandled invoke message {:?}: {:?}", arg, e);
-                    return Ok(());
-                }
-            };
-
-            match req {
-                GuiRequest::OpenUrl { url } => {
-                    open_url(url);
-                }
-                GuiRequest::ChooseFolder => {
-                    match state {
-                        AppState::Idle | AppState::Waiting(_) => {
-                            if let Some(dir) = select_dir(&mut webview)? {
-                                println!("Selected: {:?}", dir);
-                                response_dispatch(&mut webview, GuiResponse::Folder { path: dir.clone() })?;
-                                state = AppState::Scanning(dir);
-                            }
-                        },
-                        _ => {
-                            println!("Can't select folder in {:?}", state);
-                        }
-                    }
-                }
-                _ => {
-                    println!("Unhandled: {:?}", req);
                 }
             };
 
@@ -130,6 +135,8 @@ pub fn spawn_gui() {
         })
         .build()
         .expect("WebView");
+
+    // coordinator_thread(rx, webview.handle());
 
     webview.run().expect("webview");
     println!("Exiting");

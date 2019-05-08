@@ -3,6 +3,7 @@
 mod compact;
 mod folder;
 mod gui;
+mod background;
 
 use crate::compact::Compression;
 use crate::folder::FolderInfo;
