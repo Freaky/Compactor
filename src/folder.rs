@@ -120,14 +120,12 @@ impl FolderInfo {
 #[derive(Debug)]
 struct FolderScan {
     path: PathBuf,
-    status: Sender<FolderSummary>,
 }
 
 impl FolderScan {
-    pub fn new<P: AsRef<Path>>(path: P, status: Sender<FolderSummary>) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            status
         }
     }
 }
@@ -137,8 +135,9 @@ use crossbeam_channel::Sender;
 
 impl Background for FolderScan {
     type Output = Result<FolderInfo, ()>;
+    type Status = FolderSummary;
 
-    fn run(&self, control: &ControlToken) -> Self::Output {
+    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
         let mut ds = FolderInfo {
             path: self.path.clone(),
             logical_size: 0,
@@ -155,7 +154,7 @@ impl Background for FolderScan {
             "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd",
         ];
 
-        let mut last_progress = Instant::now();
+        let mut last_status = Instant::now();
 
         let walker = WalkBuilder::new(&self.path)
             .standard_filters(false)
@@ -172,8 +171,9 @@ impl Background for FolderScan {
                     return Err(());
                 }
 
-                if last_progress.elapsed() >= Duration::from_millis(100) {
-                    let _ = self.status.try_send(ds.summary());
+                if last_status.elapsed() >= Duration::from_millis(100) {
+                    last_status = Instant::now();
+                    control.set_status(ds.summary());
                 }
             }
 
@@ -220,10 +220,11 @@ impl Background for FolderScan {
 #[test]
 fn it_walks() {
     use crate::background::BackgroundHandle;
-    let (tx, rx) = crossbeam_channel::bounded::<FolderSummary>(64);
-    let scanner = FolderScan::new("C:\\Games", tx);
+    let scanner = FolderScan::new("C:\\Games");
 
     let task = BackgroundHandle::spawn(scanner);
+
+    let deadline = Instant::now() + Duration::from_millis(2000);
 
     loop {
         let ret = task.wait_timeout(Duration::from_millis(100));
@@ -232,7 +233,11 @@ fn it_walks() {
             println!("Scanned: {:?}", ret);
             break;
         } else {
-            println!("Progress: {:?}", rx.try_recv());
+            println!("Status: {:?}", task.status());
+        }
+
+        if Instant::now() > deadline {
+            task.cancel();
         }
     }
 }

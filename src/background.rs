@@ -6,22 +6,33 @@
 use std::time::Duration;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::sync::mpsc::{self, Receiver, TryRecvError, RecvTimeoutError};
 use std::thread;
 use std::panic::{catch_unwind, RefUnwindSafe};
 
 #[derive(Debug, Clone)]
-pub struct ControlToken(Arc<ControlTokenInner>);
+pub struct ControlToken<S>(Arc<ControlTokenInner<S>>);
 
 #[derive(Debug, Default)]
-pub struct ControlTokenInner {
+pub struct ControlTokenInner<S> {
     cancel: AtomicBool,
     pause: AtomicBool,
+    status: Mutex<Option<S>>
 }
 
-impl ControlToken {
+impl<S> ControlToken<S> 
+{
     pub fn new() -> Self {
-        Self(Arc::new(ControlTokenInner::default()))
+        Self(
+            Arc::new(
+                ControlTokenInner {
+                    cancel: AtomicBool::new(false),
+                    pause: AtomicBool::new(false),
+                    status: Mutex::new(None)
+                }
+            )
+        )
     }
 
     pub fn cancel(&self) {
@@ -59,6 +70,16 @@ impl ControlToken {
         paused
     }
 
+    pub fn set_status(&self, status: S) {
+        let mut previous = self.0.status.lock().expect("status lock");
+        previous.replace(status);
+    }
+
+    pub fn get_status(&self) -> Option<S> {
+        let mut current = self.0.status.lock().expect("status lock");
+        current.take()
+    }
+
     pub fn result(&self) -> Result<(), ()> {
         if self.is_cancelled() {
             Err(())
@@ -68,22 +89,23 @@ impl ControlToken {
     }
 }
 
-impl Default for ControlToken {
+impl<S> Default for ControlToken<S> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub struct BackgroundHandle<T> {
+pub struct BackgroundHandle<T, S> {
     result: Receiver<std::thread::Result<T>>,
-    control: ControlToken
+    control: ControlToken<S>
 }
 
-impl<T> BackgroundHandle<T> {
-    pub fn spawn<K>(task: K) -> BackgroundHandle<T>
+impl<T, S> BackgroundHandle<T, S> {
+    pub fn spawn<K>(task: K) -> BackgroundHandle<T, S>
     where
-        K: Background<Output=T> + RefUnwindSafe + Send + Sync + 'static,
-        T: Send + Sync + 'static
+        K: Background<Output=T, Status=S> + RefUnwindSafe + Send + Sync + 'static,
+        T: Send + Sync + 'static,
+        S: Send + Sync + Clone + 'static,
     {
         let (tx, rx) = mpsc::channel();
         let control = ControlToken::new();
@@ -131,6 +153,9 @@ impl<T> BackgroundHandle<T> {
         self.control.is_cancelled()
     }
 
+    pub fn status(&self) -> Option<S> {
+        self.control.get_status()
+    }
 
     pub fn pause(&self) {
         self.control.pause();
@@ -145,7 +170,7 @@ impl<T> BackgroundHandle<T> {
     }
 }
 
-impl<T> Drop for BackgroundHandle<T> {
+impl<T, S> Drop for BackgroundHandle<T, S> {
     fn drop(&mut self) {
         self.cancel();
     }
@@ -153,8 +178,9 @@ impl<T> Drop for BackgroundHandle<T> {
 
 pub trait Background: Send + Sync {
     type Output: Send + Sync;
+    type Status: Send + Sync;
 
-    fn run(&self, control: &ControlToken) -> Self::Output;
+    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output;
 }
 
 #[cfg(test)]
@@ -167,12 +193,14 @@ mod tests {
 
     impl Background for Tick {
         type Output = Result<u32, u32>;
+        type Status = u32;
 
-        fn run(&self, control: &ControlToken) -> Self::Output {
+        fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
             let mut ticks = 0;
 
             while ticks < 100 && !control.is_cancelled_with_pause() {
                 ticks += 1;
+                control.set_status(ticks);
 
                 thread::sleep(Duration::from_millis(10));
             }
