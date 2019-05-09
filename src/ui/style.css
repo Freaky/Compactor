@@ -73,6 +73,18 @@ section button.pause {
   background-color: rgb(91, 192, 222);
 }
 
+section button.analyse {
+  background-color: rgb(33, 186, 69);
+}
+
+section button.compress {
+  background-color: rgb(0, 209, 178);
+}
+
+section button.decompress {
+  background-color: rgb(33, 133, 208);
+}
+
 progress {
   height: 20px;
   width: 90%;

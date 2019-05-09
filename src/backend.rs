@@ -5,7 +5,7 @@ use crate::gui::{GuiRequest, GuiResponse, GuiWrapper};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crossbeam_channel::Receiver;
+use crossbeam_channel::{Receiver, RecvTimeoutError};
 
 use std::time::Duration;
 
@@ -87,13 +87,13 @@ impl<T> Backend<T> {
                     self.gui.status("Scanning", None);
                     self.gui.resumed();
                 }
-                Ok(GuiRequest::Stop) => {
+                Ok(GuiRequest::Stop) | Err(RecvTimeoutError::Disconnected) => {
                     task.cancel();
                 }
                 Ok(msg) => {
                     eprintln!("Ignored message: {:?}", msg);
                 }
-                Err(_) => (),
+                Err(RecvTimeoutError::Timeout) => ()
             }
 
             match task.wait_timeout(Duration::from_millis(10)) {

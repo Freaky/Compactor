@@ -300,7 +300,7 @@ var Gui = (function() {
 
 			if (data.logical_size > 0) {
 				var ratio = (data.physical_size / data.logical_size);
-				$("#Compress_Ratio").text(Util.format_number(data.skipped, 2));
+				$("#Compress_Ratio").text(Util.format_number(ratio, 2));
 				$("#Size_Compressed").val(ratio);
 			} else {
 				$("#Compress_Ratio").text("1.00");

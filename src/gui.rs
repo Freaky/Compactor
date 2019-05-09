@@ -47,7 +47,6 @@ pub enum GuiResponse {
     Folder { path: PathBuf },
     Status { status: String, pct: Option<f32> },
     FolderSummary { info: FolderSummary },
-    FolderInfo { info: FolderInfo },
     Paused,
     Resumed,
     Scanned,
@@ -158,11 +157,13 @@ pub fn spawn_gui() {
 
     let gui = GuiWrapper::new(webview.handle());
     let mut backend = Backend::new(gui, from_gui_rx);
-    std::thread::spawn(move || {
+    let bg = std::thread::spawn(move || {
         backend.run();
     });
 
     webview.run().expect("webview");
+    println!("Waiting for background worker to finish");
+    bg.join().expect("background thread");
     println!("Exiting");
 }
 
