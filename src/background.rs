@@ -1,15 +1,14 @@
+use std::panic::{catch_unwind, RefUnwindSafe};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, TryRecvError};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread;
 /// Tiny thread-backed background job thing
 ///
 /// This is very similar to ffi_helper's Task
 /// https://github.com/Michael-F-Bryan/ffi_helpers
-
 use std::time::Duration;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
-use std::sync::mpsc::{self, Receiver, TryRecvError, RecvTimeoutError};
-use std::thread;
-use std::panic::{catch_unwind, RefUnwindSafe};
 
 #[derive(Debug, Clone)]
 pub struct ControlToken<S>(Arc<ControlTokenInner<S>>);
@@ -18,21 +17,16 @@ pub struct ControlToken<S>(Arc<ControlTokenInner<S>>);
 pub struct ControlTokenInner<S> {
     cancel: AtomicBool,
     pause: AtomicBool,
-    status: Mutex<Option<S>>
+    status: Mutex<Option<S>>,
 }
 
-impl<S> ControlToken<S>
-{
+impl<S> ControlToken<S> {
     pub fn new() -> Self {
-        Self(
-            Arc::new(
-                ControlTokenInner {
-                    cancel: AtomicBool::new(false),
-                    pause: AtomicBool::new(false),
-                    status: Mutex::new(None)
-                }
-            )
-        )
+        Self(Arc::new(ControlTokenInner {
+            cancel: AtomicBool::new(false),
+            pause: AtomicBool::new(false),
+            status: Mutex::new(None),
+        }))
     }
 
     pub fn cancel(&self) {
@@ -97,13 +91,13 @@ impl<S> Default for ControlToken<S> {
 
 pub struct BackgroundHandle<T, S> {
     result: Receiver<std::thread::Result<T>>,
-    control: ControlToken<S>
+    control: ControlToken<S>,
 }
 
 impl<T, S> BackgroundHandle<T, S> {
     pub fn spawn<K>(task: K) -> BackgroundHandle<T, S>
     where
-        K: Background<Output=T, Status=S> + RefUnwindSafe + Send + Sync + 'static,
+        K: Background<Output = T, Status = S> + RefUnwindSafe + Send + Sync + 'static,
         T: Send + Sync + 'static,
         S: Send + Sync + Clone + 'static,
     {
@@ -118,7 +112,7 @@ impl<T, S> BackgroundHandle<T, S> {
 
         BackgroundHandle {
             result: rx,
-            control
+            control,
         }
     }
 
@@ -126,7 +120,7 @@ impl<T, S> BackgroundHandle<T, S> {
         match self.result.try_recv() {
             Ok(value) => Some(value.unwrap()),
             Err(TryRecvError::Empty) => None,
-            Err(e) => panic!("{:?}", e)
+            Err(e) => panic!("{:?}", e),
         }
     }
 
@@ -134,14 +128,14 @@ impl<T, S> BackgroundHandle<T, S> {
         match self.result.recv_timeout(wait) {
             Ok(value) => Some(value.unwrap()),
             Err(RecvTimeoutError::Timeout) => None,
-            Err(e) => panic!("{:?}", e)
+            Err(e) => panic!("{:?}", e),
         }
     }
 
     pub fn wait(self) -> T {
         match self.result.recv() {
             Ok(value) => value.unwrap(),
-            Err(e) => panic!("{:?}", e)
+            Err(e) => panic!("{:?}", e),
         }
     }
 
@@ -228,7 +222,6 @@ mod tests {
         let ticks = ret.unwrap_err();
         assert!(9 <= ticks && ticks <= 12);
     }
-
 
     #[test]
     fn it_pauses() {

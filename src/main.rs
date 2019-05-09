@@ -1,10 +1,10 @@
 // #![windows_subsystem = "windows"]
 
+mod backend;
+mod background;
 mod compact;
 mod folder;
 mod gui;
-mod background;
-mod backend;
 
 use crate::compact::Compression;
 use crate::folder::FolderInfo;

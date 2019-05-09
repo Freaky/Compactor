@@ -140,7 +140,10 @@ impl<T> GuiWrapper<T> {
     }
 
     pub fn send(&self, msg: &GuiResponse) -> WVResult {
-        let js = format!("Response.dispatch({})", serde_json::to_string(msg).expect("serialize"));
+        let js = format!(
+            "Response.dispatch({})",
+            serde_json::to_string(msg).expect("serialize")
+        );
         self.0.dispatch(move |wv| {
             println!("Eval: {}", js);
             wv.eval(&js)
@@ -186,10 +189,10 @@ pub fn spawn_gui() {
             match serde_json::from_str::<GuiRequest>(arg) {
                 Ok(GuiRequest::OpenUrl { url }) => {
                     open_url(url);
-                },
+                }
                 Ok(msg) => {
                     from_gui.send(msg).expect("GUI message queue");
-                },
+                }
                 Err(err) => {
                     eprintln!("Unhandled message {:?}: {:?}", arg, err);
                 }
