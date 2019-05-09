@@ -17,7 +17,7 @@ pub struct Backend<T> {
 
 enum Mode {
     Compress,
-    Decompress
+    Decompress,
 }
 
 impl<T> Backend<T> {
@@ -94,19 +94,21 @@ impl<T> Backend<T> {
                 Ok(msg) => {
                     eprintln!("Ignored message: {:?}", msg);
                 }
-                Err(RecvTimeoutError::Timeout) => ()
+                Err(RecvTimeoutError::Timeout) => (),
             }
 
             match task.wait_timeout(Duration::from_millis(10)) {
                 Some(Ok(info)) => {
-                    self.gui.status(format!("Scanned in {:.2?}", start.elapsed()), Some(1.0));
+                    self.gui
+                        .status(format!("Scanned in {:.2?}", start.elapsed()), Some(1.0));
                     self.gui.summary(info.summary());
                     self.gui.scanned();
                     self.info = Some(info);
                     break;
                 }
                 Some(Err(info)) => {
-                    self.gui.status(format!("Stopped after {:.2?}", start.elapsed()), Some(0.5));
+                    self.gui
+                        .status(format!("Stopped after {:.2?}", start.elapsed()), Some(0.5));
                     self.gui.summary(info.summary());
                     self.gui.stopped();
                     self.info = Some(info);

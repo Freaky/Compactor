@@ -35,6 +35,8 @@ impl Compression {
     }
 }
 
+use std::path::PathBuf;
+
 impl Compact {
     fn compact_files<P: AsRef<OsStr>>(&self, paths: &[P]) -> Result<(), String> {
         let mut child = Command::new("compact.exe")
@@ -52,8 +54,17 @@ impl Compact {
                 .take()
                 .ok_or_else(|| "compact.exe: stdio".to_string())?,
         );
+
+        let mut folder = String::from("");
         for line in out.lines() {
-            println!("Compact: {}", line.unwrap_or_default());
+            let line = line.unwrap_or_default();
+
+            // this better not be localised...
+            if line.starts_with(" Compressing files in ") {
+                folder = line[" Compressing files in ".len()..].to_string();
+                println!("Folder: {}", folder);
+            }
+            println!("Compact: {}", line);
         }
 
         let status = child

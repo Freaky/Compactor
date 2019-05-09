@@ -1,5 +1,5 @@
-use std::path::Path;
 use crate::folder::{FolderInfo, FolderSummary};
+use std::path::Path;
 use web_view::*;
 
 use winapi::shared::winerror;
@@ -11,6 +11,10 @@ use winapi::um::winbase;
 use winapi::um::winnt;
 
 use std::path::PathBuf;
+
+extern crate ctrlc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use crate::backend::Backend;
 
@@ -50,7 +54,7 @@ pub enum GuiResponse {
     Paused,
     Resumed,
     Scanned,
-    Stopped
+    Stopped,
 }
 
 pub struct GuiWrapper<T>(Handle<T>);
@@ -65,10 +69,12 @@ impl<T> GuiWrapper<T> {
             "Response.dispatch({})",
             serde_json::to_string(msg).expect("serialize")
         );
-        self.0.dispatch(move |wv| {
-            println!("Eval: {}", js);
-            wv.eval(&js)
-        }).ok(); // let errors bubble through via messages
+        self.0
+            .dispatch(move |wv| {
+                println!("Eval: {}", js);
+                wv.eval(&js)
+            })
+            .ok(); // let errors bubble through via messages
     }
 
     pub fn summary(&self, info: FolderSummary) {
@@ -83,7 +89,9 @@ impl<T> GuiWrapper<T> {
     }
 
     pub fn folder<P: AsRef<Path>>(&self, path: P) {
-        self.send(&GuiResponse::Folder { path: path.as_ref().to_path_buf() });
+        self.send(&GuiResponse::Folder {
+            path: path.as_ref().to_path_buf(),
+        });
     }
 
     pub fn paused(&self) {
@@ -114,6 +122,13 @@ impl<T> GuiWrapper<T> {
 }
 
 pub fn spawn_gui() {
+    let signalled = Arc::new(AtomicBool::new(false));
+    let r = signalled.clone();
+    ctrlc::set_handler(move || {
+        r.store(true, Ordering::SeqCst);
+    })
+    .expect("Error setting Ctrl-C handler");
+
     set_dpi_aware();
 
     let mut html = String::new();
@@ -130,7 +145,7 @@ pub fn spawn_gui() {
 
     let (from_gui, from_gui_rx) = bounded::<GuiRequest>(128);
 
-    let webview = web_view::builder()
+    let mut webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
         .size(1000, 700)
@@ -161,10 +176,27 @@ pub fn spawn_gui() {
         backend.run();
     });
 
-    webview.run().expect("webview");
-    println!("Waiting for background worker to finish");
+    loop {
+        if signalled.load(Ordering::SeqCst) {
+            webview.into_inner();
+            break;
+        }
+
+        match webview.step() {
+            Some(Ok(_)) => (),
+            Some(e) => {
+                eprintln!("Error: {:?}", e);
+            }
+            None => {
+                webview.into_inner();
+                break;
+            }
+        }
+    }
+
+    eprintln!("Waiting for background worker to finish");
     bg.join().expect("background thread");
-    println!("Exiting");
+    eprintln!("Exiting");
 }
 
 fn open_url<U: AsRef<str>>(url: U) {
