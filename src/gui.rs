@@ -38,15 +38,6 @@ use crossbeam_channel::{bounded, Receiver, Sender};
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 
-#[derive(Debug, Clone)]
-enum AppState {
-    Idle,
-    Scanning(PathBuf),
-    Waiting(FolderInfo),
-    Compressing(FolderInfo),
-    Decompressing(FolderInfo),
-}
-
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -57,7 +48,7 @@ pub enum GuiRequest {
     Decompress,
     Pause,
     Resume,
-    Cancel,
+    Stop,
     Quit,
 }
 

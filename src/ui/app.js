@@ -56,18 +56,18 @@ var Util = (function() {
 
 		format_number: function(number, digits) {
 			if (digits === undefined) digits = 2;
-			return number.toLocaleString("en", {maximumFractionDigits: digits});
+			return number.toLocaleString("en", {minimumFractionDigits: digits, maximumFractionDigits: digits});
 		},
 
 		bytes_to_human: function(bytes) {
 			for (var i = powers.length - 1; i > 0; i--) {
 				var div = Math.pow(2, 10*i);
 				if (bytes >= div) {
-					return Util.format_number(bytes / div, 2) + powers[i] + 'iB';
+					return Util.format_number(bytes / div, 2) + " " + powers[i] + 'iB';
 				}
 			}
 
-			return Util.format_number(bytes) + 'B';
+			return Util.format_number(bytes, 0) + ' B';
 		},
 
 		human_to_bytes: function(human) {
@@ -152,8 +152,12 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'Resume' }));
 		},
 
-		cancel: function() {
-			external.invoke(JSON.stringify({ type: 'Cancel' }));
+		restart: function() {
+			external.invoke(JSON.stringify({ type: 'Restart' }));
+		},
+
+		stop: function() {
+			external.invoke(JSON.stringify({ type: 'Stop' }));
 		},
 
 		quit: function() {

@@ -64,7 +64,7 @@ impl<T> Backend<T> {
                     self.gui.send(&GuiResponse::Status { status: "Scanning".into(), pct: None });
                     // gui.resume()/
                 },
-                Ok(GuiRequest::Cancel) => {
+                Ok(GuiRequest::Stop) => {
                     task.cancel();
                 },
                 Ok(msg) => {

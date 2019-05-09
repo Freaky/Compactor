@@ -25,7 +25,7 @@
           <progress id="Activity_Progress" style="width: 70%;"></progress>
           <button id="Button_Pause" class="pause" onclick="Action.pause()">⏸️ Pause</button>
           <button id="Button_Resume" class="resume" onclick="Action.resume()">▶️ Resume</button>
-          <button id="Button_Cancel" class="cancel" onclick="Action.cancel()">⏹️ Stop</button>
+          <button id="Button_Stop" class="stop" onclick="Action.stop()">⏹️ Stop</button>
         </div>
       </section>
 
@@ -37,13 +37,13 @@
       </section>
 
       <section id="Analysis" style="display: none;">
-        <label>Logical Size</label>: <span id="Size_Logical">2.4 GiB</span><br>
+        <label>Logical Size</label>: <span id="Size_Logical">0 B</span><br>
         <div class="ctr"><progress id="Size_Uncompressed" value="1"></progress></div><br>
-        <label>Physical Size</label>: <span id="Size_Physical">1.4 GiB</span> (<span id="Compress_Ratio">0.58</span>x, <span id="Space_Saved">-1 GiB</span>)<br>
+        <label>Physical Size</label>: <span id="Size_Physical">0 B</span> (<span id="Compress_Ratio">1.00</span>x, <span id="Space_Saved">0 B</span>)<br>
         <div class="ctr"><progress id="Size_Compressed" value="1"></progress></div><br>
-        <span id="File_Count_Compressed">1,984</span> compressed,
-        <span id="File_Count_Compressible">4,829</span> compressible,
-        <span id="File_Count_Skipped">496</span> incompressible files.
+        <span id="File_Count_Compressed">0</span> compressed,
+        <span id="File_Count_Compressible">0</span> compressible,
+        <span id="File_Count_Skipped">0</span> incompressible files.
 <!-- 
         <div class="ctr"><textarea id="Analysis_Output" readonly spellcheck="false" wrap="off">
 AIW2ModdingAndGUI\ProjectSettings\InputManager.asset (0.10x, 125447 -> 12288)
