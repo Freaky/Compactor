@@ -25,7 +25,6 @@ pub struct FolderInfo {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FolderSummary {
-    pub path: PathBuf,
     pub logical_size: u64,
     pub physical_size: u64,
     pub compressible: usize,
@@ -36,7 +35,6 @@ pub struct FolderSummary {
 impl FolderInfo {
     pub fn summary(&self) -> FolderSummary {
         FolderSummary {
-            path: self.path.clone(),
             logical_size: self.logical_size,
             physical_size: self.physical_size,
             compressible: self.compressible.len(),
@@ -118,7 +116,7 @@ impl FolderInfo {
 }
 
 #[derive(Debug)]
-struct FolderScan {
+pub struct FolderScan {
     path: PathBuf,
 }
 

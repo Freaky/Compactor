@@ -21,7 +21,7 @@ pub struct ControlTokenInner<S> {
     status: Mutex<Option<S>>
 }
 
-impl<S> ControlToken<S> 
+impl<S> ControlToken<S>
 {
     pub fn new() -> Self {
         Self(

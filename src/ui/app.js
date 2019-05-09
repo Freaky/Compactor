@@ -148,7 +148,7 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'Pause' }));
 		},
 
-		continue: function() {
+		resume: function() {
 			external.invoke(JSON.stringify({ type: 'Resume' }));
 		},
 
@@ -171,12 +171,12 @@ var Response = (function() {
 					Gui.set_folder(msg.path);
 					break;
 
-				case "Progress":
-					Gui.set_progress(msg.status, msg.pct);
+				case "Status":
+					Gui.set_status(msg.status, msg.pct);
 					break;
 
-				case "FolderInfo":
-					Gui.set_folder_info(msg.info);
+				case "FolderSummary":
+					Gui.set_folder_summary(msg.info);
 					break;
 			}
 		}
@@ -215,7 +215,7 @@ var Gui = (function() {
 			});
 			button.append(end);
 
-			Gui.reset_folder_info();
+			Gui.reset_folder_summary();
 
 			$("#Activity").show();
 			$("#Analysis").show();
@@ -225,13 +225,17 @@ var Gui = (function() {
 			// $("#Button_Folder").text(folder);
 		},
 
-		set_progress: function(status, pct) {
+		set_status: function(status, pct) {
 			$("#Activity_Text").text(status);
-			$("#Activity_Progress").val(pct);
+			if (pct != null) {
+				$("#Activity_Progress").val(pct);
+			} else {
+				$("#Activity_Progress").removeAttr("value");
+			}
 		},
 
-		reset_folder_info: function() {
-			Gui.set_folder_info({
+		reset_folder_summary: function() {
+			Gui.set_folder_summary({
 				logical_size: 0,
 				physical_size: 0,
 				compressed: 0,
@@ -240,12 +244,12 @@ var Gui = (function() {
 			});
 		},
 
-		set_folder_info: function(data) {
+		set_folder_summary: function(data) {
 			$("#Size_Logical").text(Util.bytes_to_human(data.logical_size));
 			$("#Size_Physical").text(Util.bytes_to_human(data.physical_size));
 
-			if (data.physical_size > 0) {
-				var ratio = (data.logical_size / data.physical_size);
+			if (data.logical_size > 0) {
+				var ratio = (data.physical_size / data.logical_size);
 				$("#Compress_Ratio").text(ratio.toFixed(2));
 				$("#Size_Compressed").val(ratio);
 			} else {

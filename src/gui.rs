@@ -1,4 +1,4 @@
-use crate::folder::FolderInfo;
+use crate::folder::{FolderInfo, FolderSummary};
 use web_view::*;
 
 use winapi::shared::winerror;
@@ -10,6 +10,8 @@ use winapi::um::winbase;
 use winapi::um::winnt;
 
 use std::path::PathBuf;
+
+use crate::backend::Backend;
 
 const HTML_HEAD: &str = include_str!("ui/head.html");
 const HTML_CSS: &str = include_str!("ui/style.css");
@@ -48,7 +50,7 @@ enum AppState {
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
-enum GuiRequest {
+pub enum GuiRequest {
     OpenUrl { url: String },
     ChooseFolder,
     Compress,
@@ -62,9 +64,11 @@ enum GuiRequest {
 // messages to send to the GUI
 #[derive(Serialize)]
 #[serde(tag = "type")]
-enum GuiResponse {
+pub enum GuiResponse {
+    ChooseFolder,
     Folder { path: PathBuf },
-    Progress { status: String, pct: Option<u8> },
+    Status { status: String, pct: Option<f32> },
+    FolderSummary { info: FolderSummary },
     FolderInfo { info: FolderInfo },
 }
 
@@ -99,6 +103,70 @@ fn coordinator_thread(from_gui: Receiver<GuiRequest>, to_gui: Sender<GuiResponse
 }
 */
 
+/*
+fn gui_rx_thread(from_gui: Receiver<GuiRequest>, to_gui: Sender<GuiResponse>) {
+    std::thread::spawn(move || {
+        for msg in from_gui {
+            if let GuiRequest::OpenUrl { url } = msg {
+                open_url(url);
+            }
+        }
+    });
+}
+*/
+
+/*
+fn gui_tx_thread<T: 'static>(to_gui: Receiver<GuiResponse>, webview: Handle<T>) {
+    std::thread::spawn(move || {
+        for msg in to_gui {
+            match msg {
+                GuiResponse::ChooseFolder => {
+                    webview.dispatch(|wv| {
+                        select_dir(&mut webview)
+                    })
+                }
+            }
+            let json = serde_json::to_string(&msg).expect("serialize");
+            let res = webview.dispatch(move |wv| {
+                let js = format!("Response.dispatch({})", json);
+                println!("Eval: {}", js);
+                wv.eval(&js)
+            });
+
+            if let Err(Error::Dispatch) = res {
+                break; // webview has gone away
+            }
+        }
+    });
+}
+*/
+
+pub struct GuiWrapper<T>(Handle<T>);
+
+impl<T> GuiWrapper<T> {
+    pub fn new(handle: Handle<T>) -> Self {
+        Self(handle)
+    }
+
+    pub fn send(&self, msg: &GuiResponse) -> WVResult {
+        let js = format!("Response.dispatch({})", serde_json::to_string(msg).expect("serialize"));
+        self.0.dispatch(move |wv| {
+            println!("Eval: {}", js);
+            wv.eval(&js)
+        })
+    }
+
+    pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
+        let (tx, rx) = bounded::<WVResult<Option<PathBuf>>>(1);
+        let _ = self.0.dispatch(move |wv| {
+            let _ = tx.send(choose_folder(wv));
+            Ok(())
+        });
+
+        rx
+    }
+}
+
 pub fn spawn_gui() {
     set_dpi_aware();
 
@@ -114,7 +182,7 @@ pub fn spawn_gui() {
 
     std::fs::write("test.html", &html).unwrap();
 
-    let mut state = AppState::Idle;
+    let (from_gui, from_gui_rx) = bounded::<GuiRequest>(128);
 
     let webview = web_view::builder()
         .title("Compactor")
@@ -123,29 +191,32 @@ pub fn spawn_gui() {
         .resizable(true)
         .debug(true)
         .user_data(())
-        .invoke_handler(move |mut webview, arg| {
-            let req = match serde_json::from_str::<GuiRequest>(arg) {
-                Ok(req) => { req; },
-                Err(e) => {
-                    eprintln!("Unhandled invoke message {:?}: {:?}", arg, e);
+        .invoke_handler(move |_webview, arg| {
+            match serde_json::from_str::<GuiRequest>(arg) {
+                Ok(GuiRequest::OpenUrl { url }) => {
+                    open_url(url);
+                },
+                Ok(msg) => {
+                    from_gui.send(msg).expect("GUI message queue");
+                },
+                Err(err) => {
+                    eprintln!("Unhandled message {:?}: {:?}", arg, err);
                 }
-            };
+            }
 
             Ok(())
         })
         .build()
         .expect("WebView");
 
-    // coordinator_thread(rx, webview.handle());
+    let gui = GuiWrapper::new(webview.handle());
+    let mut backend = Backend::new(gui, from_gui_rx);
+    std::thread::spawn(move || {
+        backend.run();
+    });
 
     webview.run().expect("webview");
     println!("Exiting");
-}
-
-fn response_dispatch<T>(webview: &mut web_view::WebView<'_, T>, response: GuiResponse) -> WVResult {
-    let js = &format!("Response.dispatch({})", serde_json::to_string(&response).expect("serialize"));
-    println!("Eval: {}", js);
-    webview.eval(&js)
 }
 
 fn open_url<U: AsRef<str>>(url: U) {
@@ -197,7 +268,7 @@ lazy_static! {
 //
 // Sadly nobody seems interested in merging these.  For now, use a locally modified
 // copy.
-fn select_dir<T>(webview: &mut web_view::WebView<'_, T>) -> WVResult<Option<PathBuf>> {
+fn choose_folder<T>(webview: &mut web_view::WebView<'_, T>) -> WVResult<Option<PathBuf>> {
     let mut last = LAST_FILE.lock().unwrap();
     if let Some(path) = webview.dialog().choose_directory(
         "Select Directory",
