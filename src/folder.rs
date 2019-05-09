@@ -62,7 +62,7 @@ impl GroupInfo {
         GroupSummary {
             count: self.files.len(),
             logical_size: self.logical_size,
-            physical_size: self.physical_size
+            physical_size: self.physical_size,
         }
     }
 
