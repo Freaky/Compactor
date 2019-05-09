@@ -20,7 +20,7 @@
       </section>
 
       <section id="Activity" style="display: none;">
-        <div id="Activity_Text"></div>
+        <div id="Activity_Text" class="ctr"></div>
         <div class="ctr">
           <progress id="Activity_Progress" style="width: 95%;"></progress>
         </div>
@@ -38,26 +38,19 @@
       </section>
 
       <section id="Analysis" style="display: none;">
-        <label>Logical Size</label>: <span id="Size_Logical">0 B</span><br>
-        <div class="ctr"><progress id="Size_Uncompressed" value="1"></progress></div><br>
-        <label>Physical Size</label>: <span id="Size_Physical">0 B</span> (<span id="Compress_Ratio">1.00</span>x, <span id="Space_Saved">0 B</span>)<br>
-        <div class="ctr"><progress id="Size_Compressed" value="1"></progress></div><br>
-        <span id="File_Count_Compressed">0</span> compressed,
-        <span id="File_Count_Compressible">0</span> compressible,
-        <span id="File_Count_Skipped">0</span> incompressible files.
-<!-- 
-        <div class="ctr"><textarea id="Analysis_Output" readonly spellcheck="false" wrap="off">
-AIW2ModdingAndGUI\ProjectSettings\InputManager.asset (0.10x, 125447 -> 12288)
-AssetBundles_Win\arcencolors (0.11x, 90558103 -> 9859072)
-AIWar2_Data\Resources\unity default resources (0.12x, 3584332 -> 430080)
-AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\Afterburner.prefab (0.12x, 136281 -> 16384)
-AIW2ModdingAndGUI\Assets\Examples\Ship\Data_Center\Data\Data_Center_EmissFlowMap.png (0.12x, 32817 -> 4096)
-AIW2ModdingAndGUI\Assets\Examples\SceneData\UV_Outline_HD.tga (0.12x, 262162 -> 32768)
-AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\FireComplex.prefab (0.15x, 166257 -> 24576)
-AIW2ModdingAndGUI\Assets\Standard Assets\ParticleSystems\Prefabs\Fireworks.prefab (0.15x, 165576 -> 24576)
-AIW2ModdingAndGUI\Assets\ArcenSquads\Grids\1_Finger_Four80.prefab (0.15x, 165238 -> 24576)
-AIWar2_Data\Managed\UnityEngine.IMGUIModule.xml (0.16x, 290409 -> 45056)
-        </textarea></div> -->
+        <div>
+          <div style="padding: 2px;"><span style="background-color: white;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Space_Saved">0 B</span> of <span id="Size_Logical">0 B</span> saved (<span id="Compress_Ratio">1.00</span>x, <span id="Size_Physical">0 B</span> on-disk)</div>
+          <div style="padding: 2px;"><span style="background-color: green;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressed_Size">0 B</span> in <span id="File_Count_Compressed">0</span> compressed</div>
+          <div style="padding: 2px;"><span style="background-color: #0079d6;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressible_Size">0 B</span> in <span id="File_Count_Compressible">0</span> compressible</div>
+          <div style="padding: 2px;"><span style="background-color: orange;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Skipped_Size">0 B</span> in <span id="File_Count_Skipped">0</span> incompressible</div>
+        </div>
+
+        <div id="File_Count_Breakdown" style="display:flex;width: 95%;font-size: smaller;border: 1px solid black;border-radius: 2px;margin: 8px auto;overflow: hidden;">
+          <div id="Breakdown_Compressed" style="width: 0;overflow: hidden;background-color: green;height: 18px;"></div>
+          <div id="Breakdown_Compressible" style="overflow: hidden;background-color: #0079d6;height: 18px;"></div>
+          <div id="Breakdown_Skipped" style="width: 0;overflow: hidden;background-color: orange;height: 18px;"></div>
+          <div id="Breakdown_Saved" style="flex: auto;overflow: hidden;background-color: white;height: 18px;"></div>
+        </div>
       </section>
     </section>
 

@@ -75,12 +75,12 @@ impl<T> Backend<T> {
 
         self.gui.status("Scanning", None);
         loop {
-            let msg = self.msg.recv_timeout(Duration::from_millis(10));
+            let msg = self.msg.recv_timeout(Duration::from_millis(25));
 
             match msg {
                 Ok(GuiRequest::Pause) => {
                     task.pause();
-                    self.gui.status("Paused", None);
+                    self.gui.status("Paused", Some(0.5));
                     self.gui.paused();
                 }
                 Ok(GuiRequest::Resume) => {
@@ -97,7 +97,7 @@ impl<T> Backend<T> {
                 Err(RecvTimeoutError::Timeout) => (),
             }
 
-            match task.wait_timeout(Duration::from_millis(10)) {
+            match task.wait_timeout(Duration::from_millis(25)) {
                 Some(Ok(info)) => {
                     self.gui
                         .status(format!("Scanned in {:.2?}", start.elapsed()), Some(1.0));

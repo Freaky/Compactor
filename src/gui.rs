@@ -148,7 +148,7 @@ pub fn spawn_gui() {
     let mut webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
-        .size(1000, 700)
+        .size(1000, 550)
         .resizable(true)
         .debug(true)
         .user_data(())

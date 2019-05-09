@@ -12,23 +12,37 @@ pub struct FileInfo {
     pub physical_size: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct GroupInfo {
+    pub files: Vec<FileInfo>,
+    pub logical_size: u64,
+    pub physical_size: u64,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct FolderInfo {
     pub path: PathBuf,
     pub logical_size: u64,
     pub physical_size: u64,
-    pub compressible: Vec<FileInfo>,
-    pub compressed: Vec<FileInfo>,
-    pub skipped: Vec<FileInfo>,
+    pub compressible: GroupInfo,
+    pub compressed: GroupInfo,
+    pub skipped: GroupInfo,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct FolderSummary {
     pub logical_size: u64,
     pub physical_size: u64,
-    pub compressible: usize,
-    pub compressed: usize,
-    pub skipped: usize,
+    pub compressible: GroupSummary,
+    pub compressed: GroupSummary,
+    pub skipped: GroupSummary,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct GroupSummary {
+    pub count: usize,
+    pub logical_size: u64,
+    pub physical_size: u64,
 }
 
 impl FolderInfo {
@@ -36,10 +50,26 @@ impl FolderInfo {
         FolderSummary {
             logical_size: self.logical_size,
             physical_size: self.physical_size,
-            compressible: self.compressible.len(),
-            compressed: self.compressed.len(),
-            skipped: self.skipped.len(),
+            compressible: self.compressible.summary(),
+            compressed: self.compressed.summary(),
+            skipped: self.skipped.summary(),
         }
+    }
+}
+
+impl GroupInfo {
+    pub fn summary(&self) -> GroupSummary {
+        GroupSummary {
+            count: self.files.len(),
+            logical_size: self.logical_size,
+            physical_size: self.physical_size
+        }
+    }
+
+    pub fn push(&mut self, fi: FileInfo) {
+        self.logical_size += fi.logical_size;
+        self.physical_size += fi.physical_size;
+        self.files.push(fi);
     }
 }
 
@@ -67,9 +97,9 @@ impl Background for FolderScan {
             path: self.path.clone(),
             logical_size: 0,
             physical_size: 0,
-            compressible: vec![],
-            compressed: vec![],
-            skipped: vec![],
+            compressible: GroupInfo::default(),
+            compressed: GroupInfo::default(),
+            skipped: GroupInfo::default(),
         };
 
         let skip_exts = vec![
@@ -132,11 +162,13 @@ impl Background for FolderScan {
             }
         }
 
+        /*
         ds.compressed.sort_by(|a, b| {
             (a.physical_size as f64 / a.logical_size as f64)
                 .partial_cmp(&(b.physical_size as f64 / b.logical_size as f64))
                 .unwrap()
         });
+        */
 
         Ok(ds)
     }
