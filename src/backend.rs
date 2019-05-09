@@ -70,7 +70,6 @@ impl<T> Backend<T> {
                         status: "Paused".into(),
                         pct: None,
                     });
-                    // gui.paused();
                 }
                 Ok(GuiRequest::Resume) => {
                     task.resume();
@@ -78,7 +77,6 @@ impl<T> Backend<T> {
                         status: "Scanning".into(),
                         pct: None,
                     });
-                    // gui.resume()/
                 }
                 Ok(GuiRequest::Stop) => {
                     task.cancel();
@@ -95,14 +93,17 @@ impl<T> Backend<T> {
                         status: "Scanned".into(),
                         pct: Some(1.0),
                     });
-                    self.scanned_idle(info);
+                    self.gui.send(&GuiResponse::FolderSummary { info: info.summary() });
+                    self.info = Some(info);
                     break;
                 }
-                Some(Err(_)) => {
+                Some(Err(info)) => {
                     self.gui.send(&GuiResponse::Status {
                         status: "Stopped".into(),
                         pct: Some(0.5),
                     });
+                    self.gui.send(&GuiResponse::FolderSummary { info: info.summary() });
+                    self.info = Some(info);
                     break;
                 }
                 None => {

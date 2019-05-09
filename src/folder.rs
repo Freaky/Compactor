@@ -132,7 +132,7 @@ use crate::background::{Background, ControlToken};
 use crossbeam_channel::Sender;
 
 impl Background for FolderScan {
-    type Output = Result<FolderInfo, ()>;
+    type Output = Result<FolderInfo, FolderInfo>;
     type Status = FolderSummary;
 
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
@@ -166,7 +166,7 @@ impl Background for FolderScan {
         for (count, (entry, metadata, physical)) in walker {
             if count % 128 == 0 {
                 if control.is_cancelled_with_pause() {
-                    return Err(());
+                    return Err(ds);
                 }
 
                 if last_status.elapsed() >= Duration::from_millis(100) {

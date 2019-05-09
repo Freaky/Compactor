@@ -223,7 +223,7 @@ var Gui = (function() {
 
 			$("#Activity").show();
 			$("#Analysis").show();
-			$("#Command").hide();
+			$("#Command").show();
 
 			// why use a one-liner when you can faff about?
 			// $("#Button_Folder").text(folder);
@@ -254,7 +254,7 @@ var Gui = (function() {
 
 			if (data.logical_size > 0) {
 				var ratio = (data.physical_size / data.logical_size);
-				$("#Compress_Ratio").text(ratio.toFixed(2));
+				$("#Compress_Ratio").text(Util.format_number(data.skipped, 2));
 				$("#Size_Compressed").val(ratio);
 			} else {
 				$("#Compress_Ratio").text("1.00");
@@ -263,9 +263,9 @@ var Gui = (function() {
 
 			$("#Space_Saved").text(Util.bytes_to_human(data.logical_size - data.physical_size));
 
-			$("#File_Count_Compressed").text(Util.format_number(data.compressed));
-			$("#File_Count_Compressible").text(Util.format_number(data.compressible));
-			$("#File_Count_Skipped").text(Util.format_number(data.skipped));
+			$("#File_Count_Compressed").text(Util.format_number(data.compressed, 0));
+			$("#File_Count_Compressible").text(Util.format_number(data.compressible, 0));
+			$("#File_Count_Skipped").text(Util.format_number(data.skipped, 0));
 		},
 
 		analysis_complete: function() {
