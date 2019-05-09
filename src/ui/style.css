@@ -66,19 +66,19 @@ a:active, a:hover {
 }
 
 section button.stop {
-  background-color: rgb(217, 83, 79);
+  background-color: rgb(219, 40, 40);
 }
 
 section button.pause {
-  background-color: rgb(91, 192, 222);
+  background-color: rgb(118, 118, 118);
 }
 
 section button.analyse {
-  background-color: rgb(33, 186, 69);
+  background-color: rgb(118, 118, 118);
 }
 
 section button.compress {
-  background-color: rgb(0, 209, 178);
+  background-color: rgb(33, 186, 69);
 }
 
 section button.decompress {

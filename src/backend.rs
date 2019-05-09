@@ -48,6 +48,7 @@ impl<T> Backend<T> {
                 }
                 Ok(GuiRequest::Analyse) if self.info.is_some() => {
                     let path = self.info.take().unwrap().path;
+                    self.gui.folder(&path);
                     self.scan_loop(path);
                 }
                 Ok(GuiRequest::Compress) if self.info.is_some() => {
@@ -113,8 +114,7 @@ impl<T> Backend<T> {
                 }
                 None => {
                     if let Some(status) = task.status() {
-                        eprintln!("Status: {:?}", status);
-                        self.gui.send(&GuiResponse::FolderSummary { info: status });
+                        self.gui.summary(status);
                     }
                 }
             }
