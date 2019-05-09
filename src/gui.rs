@@ -1,3 +1,4 @@
+use std::path::Path;
 use crate::folder::{FolderInfo, FolderSummary};
 use web_view::*;
 
@@ -19,21 +20,7 @@ const HTML_JS_DEPS: &str = include_str!("ui/cash.min.js");
 const HTML_JS_APP: &str = include_str!("ui/app.js");
 const HTML_REST: &str = include_str!("ui/rest.html");
 
-/*
-fn escape_html_into(text: &str, out: &mut String) {
-    for c in text.chars() {
-        match c {
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '&' => out.push_str("&amp;"),
-            '\'' => out.push_str("&#39;"),
-            '"' => out.push_str("&quot;"),
-            _ => out.push(c)
-        };
-    }
-}
-*/
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{bounded, Receiver};
 
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
@@ -48,6 +35,7 @@ pub enum GuiRequest {
     Decompress,
     Pause,
     Resume,
+    Analyse,
     Stop,
     Quit,
 }
@@ -56,81 +44,15 @@ pub enum GuiRequest {
 #[derive(Serialize)]
 #[serde(tag = "type")]
 pub enum GuiResponse {
-    ChooseFolder,
     Folder { path: PathBuf },
     Status { status: String, pct: Option<f32> },
     FolderSummary { info: FolderSummary },
     FolderInfo { info: FolderInfo },
+    Paused,
+    Resumed,
+    Scanned,
+    Stopped
 }
-
-/*
-fn coordinator_thread(from_gui: Receiver<GuiRequest>, to_gui: Sender<GuiResponse>) {
-    std::thread::spawn(move || {
-        for ev in from_gui {
-            match ev {
-                GuiRequest::OpenUrl { url } => {
-                    open_url(url);
-                }
-                GuiRequest::ChooseFolder => {
-                    match state {
-                        AppState::Idle | AppState::Waiting(_) => {
-                            if let Some(dir) = select_dir(&mut webview)? {
-                                println!("Selected: {:?}", dir);
-                                response_dispatch(&mut wv, GuiResponse::Folder { path: dir.clone() })?;
-                                state = AppState::Scanning(dir);
-                            }
-                        },
-                        _ => {
-                            println!("Can't select folder in {:?}", state);
-                        }
-                    }
-                }
-                _ => {
-                    println!("Unhandled: {:?}", req);
-                }
-            }
-        }
-    });
-}
-*/
-
-/*
-fn gui_rx_thread(from_gui: Receiver<GuiRequest>, to_gui: Sender<GuiResponse>) {
-    std::thread::spawn(move || {
-        for msg in from_gui {
-            if let GuiRequest::OpenUrl { url } = msg {
-                open_url(url);
-            }
-        }
-    });
-}
-*/
-
-/*
-fn gui_tx_thread<T: 'static>(to_gui: Receiver<GuiResponse>, webview: Handle<T>) {
-    std::thread::spawn(move || {
-        for msg in to_gui {
-            match msg {
-                GuiResponse::ChooseFolder => {
-                    webview.dispatch(|wv| {
-                        select_dir(&mut webview)
-                    })
-                }
-            }
-            let json = serde_json::to_string(&msg).expect("serialize");
-            let res = webview.dispatch(move |wv| {
-                let js = format!("Response.dispatch({})", json);
-                println!("Eval: {}", js);
-                wv.eval(&js)
-            });
-
-            if let Err(Error::Dispatch) = res {
-                break; // webview has gone away
-            }
-        }
-    });
-}
-*/
 
 pub struct GuiWrapper<T>(Handle<T>);
 
@@ -139,7 +61,7 @@ impl<T> GuiWrapper<T> {
         Self(handle)
     }
 
-    pub fn send(&self, msg: &GuiResponse) -> WVResult {
+    pub fn send(&self, msg: &GuiResponse) {
         let js = format!(
             "Response.dispatch({})",
             serde_json::to_string(msg).expect("serialize")
@@ -147,7 +69,38 @@ impl<T> GuiWrapper<T> {
         self.0.dispatch(move |wv| {
             println!("Eval: {}", js);
             wv.eval(&js)
-        })
+        }).ok(); // let errors bubble through via messages
+    }
+
+    pub fn summary(&self, info: FolderSummary) {
+        self.send(&GuiResponse::FolderSummary { info });
+    }
+
+    pub fn status<S: AsRef<str>>(&self, msg: S, val: Option<f32>) {
+        self.send(&GuiResponse::Status {
+            status: msg.as_ref().to_owned(),
+            pct: val,
+        });
+    }
+
+    pub fn folder<P: AsRef<Path>>(&self, path: P) {
+        self.send(&GuiResponse::Folder { path: path.as_ref().to_path_buf() });
+    }
+
+    pub fn paused(&self) {
+        self.send(&GuiResponse::Paused);
+    }
+
+    pub fn resumed(&self) {
+        self.send(&GuiResponse::Resumed);
+    }
+
+    pub fn scanned(&self) {
+        self.send(&GuiResponse::Scanned);
+    }
+
+    pub fn stopped(&self) {
+        self.send(&GuiResponse::Stopped);
     }
 
     pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
@@ -181,7 +134,7 @@ pub fn spawn_gui() {
     let webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
-        .size(1000, 900)
+        .size(1000, 700)
         .resizable(true)
         .debug(true)
         .user_data(())

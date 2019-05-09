@@ -152,8 +152,8 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'Resume' }));
 		},
 
-		restart: function() {
-			external.invoke(JSON.stringify({ type: 'Restart' }));
+		analyse: function() {
+			external.invoke(JSON.stringify({ type: 'Analyse' }));
 		},
 
 		stop: function() {
@@ -177,6 +177,13 @@ var Response = (function() {
 
 				case "Status":
 					Gui.set_status(msg.status, msg.pct);
+					break;
+
+				case "Paused":
+				case "Resumed":
+				case "Stopped":
+				case "Scanned":
+					Gui[msg.type.toLowerCase()]();
 					break;
 
 				case "FolderSummary":
@@ -219,14 +226,7 @@ var Gui = (function() {
 			});
 			button.append(end);
 
-			Gui.reset_folder_summary();
-
-			$("#Activity").show();
-			$("#Analysis").show();
-			$("#Command").show();
-
-			// why use a one-liner when you can faff about?
-			// $("#Button_Folder").text(folder);
+			Gui.scanning();
 		},
 
 		set_status: function(status, pct) {
@@ -235,6 +235,52 @@ var Gui = (function() {
 				$("#Activity_Progress").val(pct);
 			} else {
 				$("#Activity_Progress").removeAttr("value");
+			}
+		},
+
+		scanning: function() {
+			Gui.reset_folder_summary();
+			$("#Activity").show();
+			$("#Analysis").show();
+			$("#Button_Pause").show();
+			$("#Button_Resume").hide();
+			$("#Button_Stop").show();
+			$("#Button_Analyse").hide();
+			$("#Button_Compress").hide();
+			$("#Button_Decompress").hide();
+			$("#Command").show();
+		},
+
+		paused: function() {
+			$("#Button_Pause").hide();
+			$("#Button_Resume").show();
+		},
+
+		resumed: function() {
+			$("#Button_Pause").show();
+			$("#Button_Resume").hide();
+		},
+
+		stopped: function() {
+			Gui.scanned();
+		},
+
+		scanned: function() {
+			$("#Button_Pause").hide();
+			$("#Button_Resume").hide();
+			$("#Button_Stop").hide();
+			$("#Button_Analyse").show();
+
+			if ($("#File_Count_Compressible").text() != "0") {
+				$("#Button_Compress").show();
+			} else {
+				$("#Button_Compress").hide();
+			}
+
+			if ($("#File_Count_Compressed").text() != "0") {
+				$("#Button_Decompress").show();
+			} else {
+				$("#Button_Decompress").hide();
 			}
 		},
 
@@ -271,7 +317,7 @@ var Gui = (function() {
 		analysis_complete: function() {
 			$("#Activity").hide();
 			$("#Analysis").show();
-			$("#Command").show();
+
 		}
 	};
 })();

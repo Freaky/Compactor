@@ -3,6 +3,7 @@ use crate::compact;
 use crate::folder::{FolderInfo, FolderScan, FolderSummary};
 use crate::gui::{GuiRequest, GuiResponse, GuiWrapper};
 use std::path::PathBuf;
+use std::time::Instant;
 
 use crossbeam_channel::Receiver;
 
@@ -12,6 +13,11 @@ pub struct Backend<T> {
     gui: GuiWrapper<T>,
     msg: Receiver<GuiRequest>,
     info: Option<FolderInfo>,
+}
+
+enum Mode {
+    Compress,
+    Decompress
 }
 
 impl<T> Backend<T> {
@@ -36,8 +42,19 @@ impl<T> Backend<T> {
                         .and_then(|x| x);
 
                     if let Some(path) = path {
+                        self.gui.folder(&path);
                         self.scan_loop(path);
                     }
+                }
+                Ok(GuiRequest::Analyse) if self.info.is_some() => {
+                    let path = self.info.take().unwrap().path;
+                    self.scan_loop(path);
+                }
+                Ok(GuiRequest::Compress) if self.info.is_some() => {
+                    self.compress_loop(Mode::Compress);
+                }
+                Ok(GuiRequest::Decompress) if self.info.is_some() => {
+                    self.compress_loop(Mode::Decompress);
                 }
                 Ok(msg) => {
                     eprintln!("Backend: Ignored message: {:?}", msg);
@@ -50,33 +67,25 @@ impl<T> Backend<T> {
         }
     }
 
-    pub fn scan_loop(&mut self, path: PathBuf) {
-        self.gui.send(&GuiResponse::Folder { path: path.clone() });
-
+    fn scan_loop(&mut self, path: PathBuf) {
         let scanner = FolderScan::new(path);
         let task = BackgroundHandle::spawn(scanner);
+        let start = Instant::now();
 
-        self.gui.send(&GuiResponse::Status {
-            status: "Scanning".into(),
-            pct: None,
-        });
+        self.gui.status("Scanning", None);
         loop {
             let msg = self.msg.recv_timeout(Duration::from_millis(10));
 
             match msg {
                 Ok(GuiRequest::Pause) => {
                     task.pause();
-                    self.gui.send(&GuiResponse::Status {
-                        status: "Paused".into(),
-                        pct: None,
-                    });
+                    self.gui.status("Paused", None);
+                    self.gui.paused();
                 }
                 Ok(GuiRequest::Resume) => {
                     task.resume();
-                    self.gui.send(&GuiResponse::Status {
-                        status: "Scanning".into(),
-                        pct: None,
-                    });
+                    self.gui.status("Scanning", None);
+                    self.gui.resumed();
                 }
                 Ok(GuiRequest::Stop) => {
                     task.cancel();
@@ -89,20 +98,16 @@ impl<T> Backend<T> {
 
             match task.wait_timeout(Duration::from_millis(10)) {
                 Some(Ok(info)) => {
-                    self.gui.send(&GuiResponse::Status {
-                        status: "Scanned".into(),
-                        pct: Some(1.0),
-                    });
-                    self.gui.send(&GuiResponse::FolderSummary { info: info.summary() });
+                    self.gui.status(format!("Scanned in {:.2?}", start.elapsed()), Some(1.0));
+                    self.gui.summary(info.summary());
+                    self.gui.scanned();
                     self.info = Some(info);
                     break;
                 }
                 Some(Err(info)) => {
-                    self.gui.send(&GuiResponse::Status {
-                        status: "Stopped".into(),
-                        pct: Some(0.5),
-                    });
-                    self.gui.send(&GuiResponse::FolderSummary { info: info.summary() });
+                    self.gui.status(format!("Stopped after {:.2?}", start.elapsed()), Some(0.5));
+                    self.gui.summary(info.summary());
+                    self.gui.stopped();
                     self.info = Some(info);
                     break;
                 }
@@ -116,5 +121,5 @@ impl<T> Backend<T> {
         }
     }
 
-    pub fn scanned_idle(&mut self, _info: FolderInfo) {}
+    fn compress_loop(&mut self, _mode: Mode) {}
 }
