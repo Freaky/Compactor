@@ -1,8 +1,8 @@
 use crate::background::BackgroundHandle;
 use crate::compact;
+use crate::compact::{BackgroundCompactor, Compact, Compacted};
 use crate::folder::{FolderInfo, FolderScan, FolderSummary};
 use crate::gui::{GuiRequest, GuiResponse, GuiWrapper};
-use crate::compact::{Compacted, Compact, BackgroundCompactor};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -140,8 +140,11 @@ impl<T> Backend<T> {
 
         self.gui.status("Compacting".to_string(), Some(0.0));
         loop {
-            while idx < total &&
-                send_file.try_send(Some(fi.path.join(&fi.compressible.files[idx].path))).is_ok() {
+            while idx < total
+                && send_file
+                    .try_send(Some(fi.path.join(&fi.compressible.files[idx].path)))
+                    .is_ok()
+            {
                 idx += 1;
 
                 if idx == total {
@@ -153,12 +156,14 @@ impl<T> Backend<T> {
             match msg {
                 Ok(GuiRequest::Pause) => {
                     task.pause();
-                    self.gui.status("Pausing".to_string(), Some(done as f32 / total as f32));
+                    self.gui
+                        .status("Pausing".to_string(), Some(done as f32 / total as f32));
                     self.gui.paused();
                 }
                 Ok(GuiRequest::Resume) => {
                     task.resume();
-                    self.gui.status("Compacting".to_string(), Some(done as f32 / total as f32));
+                    self.gui
+                        .status("Compacting".to_string(), Some(done as f32 / total as f32));
                     self.gui.resumed();
                 }
                 Ok(GuiRequest::Stop) | Err(RecvTimeoutError::Disconnected) => {
@@ -182,13 +187,16 @@ impl<T> Backend<T> {
                 fi.physical_size += completed.new_size;
             }
 
-            self.gui.status("Compacting".to_string(), Some(done as f32 / total as f32));
+            self.gui
+                .status("Compacting".to_string(), Some(done as f32 / total as f32));
             self.gui.summary(fi.summary());
 
             match task.wait_timeout(Duration::from_millis(25)) {
                 Some(Ok(())) => {
-                    self.gui
-                        .status(format!("Compacted in {:.2?}", start.elapsed()), Some(done as f32 / total as f32));
+                    self.gui.status(
+                        format!("Compacted in {:.2?}", start.elapsed()),
+                        Some(done as f32 / total as f32),
+                    );
                     self.gui.summary(fi.summary());
                     self.gui.scanned();
                     self.info = Some(fi);
@@ -196,14 +204,16 @@ impl<T> Backend<T> {
                 }
                 Some(Err(msg)) => {
                     eprintln!("Error: {}", msg);
-                    self.gui
-                        .status(format!("Stopped after {:.2?}", start.elapsed()), Some(done as f32 / total as f32));
+                    self.gui.status(
+                        format!("Stopped after {:.2?}", start.elapsed()),
+                        Some(done as f32 / total as f32),
+                    );
                     self.gui.summary(fi.summary());
                     self.gui.stopped();
                     self.info = Some(fi);
                     break;
                 }
-                None => ()
+                None => (),
             }
         }
     }

@@ -1,5 +1,5 @@
-use crate::background::ControlToken;
 use crate::background::Background;
+use crate::background::ControlToken;
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -37,21 +37,22 @@ impl Compression {
     }
 }
 
-use regex::Regex;
 use lazy_static::lazy_static;
+use regex::Regex;
 
 use std::path::PathBuf;
 
 pub struct Compacted {
     pub path: PathBuf,
     pub old_size: u64,
-    pub new_size: u64
+    pub new_size: u64,
 }
 
 impl Compact {
     fn compact_files<P: AsRef<OsStr>>(&self, paths: &[P]) -> Result<Vec<Compacted>, String> {
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"\A([^:]+)\s+(\d+) :\s+(\d+) = [0-9.]+ to 1 \[OK\]").unwrap();
+            static ref RE: Regex =
+                Regex::new(r"\A([^:]+)\s+(\d+) :\s+(\d+) = [0-9.]+ to 1 \[OK\]").unwrap();
         }
 
         let mut child = Command::new("compact.exe")
@@ -84,7 +85,11 @@ impl Compact {
                 let path = folder.join(captures[1].to_owned());
                 let old_size: u64 = captures[2].parse().unwrap();
                 let new_size: u64 = captures[3].parse().unwrap();
-                compacted.push(Compacted { path, old_size, new_size });
+                compacted.push(Compacted {
+                    path,
+                    old_size,
+                    new_size,
+                });
             }
         }
 
@@ -141,26 +146,30 @@ impl Compact {
     }
 }
 
-use crossbeam_channel::{Sender, Receiver};
+use crossbeam_channel::{Receiver, Sender};
 
 enum Mode {
     Compress,
-    Decompress
+    Decompress,
 }
 
 #[derive(Debug)]
 pub struct BackgroundCompactor {
     compactor: Compact,
     files_in: Receiver<Option<PathBuf>>,
-    files_out: Sender<Compacted>
+    files_out: Sender<Compacted>,
 }
 
 impl BackgroundCompactor {
-    pub fn new(files_in: Receiver<Option<PathBuf>>, files_out: Sender<Compacted>, compactor: Compact) -> Self {
+    pub fn new(
+        files_in: Receiver<Option<PathBuf>>,
+        files_out: Sender<Compacted>,
+        compactor: Compact,
+    ) -> Self {
         Self {
             compactor,
             files_in,
-            files_out
+            files_out,
         }
     }
 }
@@ -184,9 +193,9 @@ impl Background for BackgroundCompactor {
                 batch.push(file);
             }
 
-            if batch.len() >= 8 || done && batch.len() > 0 {
-               let ret = self.compactor.compact_files(&batch[..]);
-               batch.clear();
+            if batch.len() >= 8 || done && !batch.is_empty() {
+                let ret = self.compactor.compact_files(&batch[..]);
+                batch.clear();
 
                 match ret {
                     Ok(compressed) => {
@@ -196,7 +205,7 @@ impl Background for BackgroundCompactor {
                     }
                     Err(s) => {
                         dbg!(s);
-                        return Err("meh".to_string())
+                        return Err("meh".to_string());
                     }
                 }
             }
