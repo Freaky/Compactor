@@ -8,6 +8,7 @@ use std::path::Path;
 use winapi::shared::minwindef::{BOOL, PBOOL, PULONG, ULONG};
 use winapi::shared::ntdef::PVOID;
 use winapi::um::winnt::{HANDLE, HRESULT, LPCWSTR};
+use winapi::shared::winerror::{SUCCEEDED, HRESULT_CODE};
 use winapi::STRUCT;
 
 type P_WOF_FILE_COMPRESSION_INFO_V1 = *mut _WOF_FILE_COMPRESSION_INFO_V1;
@@ -89,7 +90,7 @@ impl Compact {
             )
         };
 
-        if ret == 0 && version > 0 {
+        if SUCCEEDED(ret) && version > 0 {
             Ok(true)
         } else {
             Ok(false)
@@ -115,14 +116,14 @@ impl Compact {
             )
         };
 
-        if ret == 0 {
+        if SUCCEEDED(ret) {
             if is_external > 0 && provider == WOF_PROVIDER_FILE {
                 Ok(Compression::from_api(file_info.Algorithm))
             } else {
                 Ok(None)
             }
         } else {
-            Err(std::io::Error::last_os_error())
+            Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
         }
     }
 
@@ -147,14 +148,15 @@ impl Compact {
             )
         };
 
-        if ret == ERROR_SUCCESS {
+        if SUCCEEDED(ret) {
             Ok(true)
         } else {
-            let e = std::io::Error::last_os_error();
+            let e = HRESULT_CODE(ret);
 
-            match e.raw_os_error() {
-                Some(ERROR_COMPRESSION_NOT_BENEFICIAL) | Some(0) => Ok(false),
-                _ => Err(e),
+            if e == ERROR_COMPRESSION_NOT_BENEFICIAL {
+                Ok(false)
+            } else {
+                Err(std::io::Error::from_raw_os_error(e))
             }
         }
     }
