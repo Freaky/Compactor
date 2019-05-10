@@ -88,6 +88,8 @@ impl FolderScan {
 
 use crate::background::{Background, ControlToken};
 
+use std::collections::HashSet;
+
 impl Background for FolderScan {
     type Output = Result<FolderInfo, FolderInfo>;
     type Status = FolderSummary;
@@ -102,12 +104,12 @@ impl Background for FolderScan {
             skipped: GroupInfo::default(),
         };
 
-        let skip_exts = vec![
+        let skip_exts: HashSet<String> = vec![
             "7z", "aac", "avi", "bik", "bmp", "br", "bz2", "cab", "dl_", "docx", "flac", "flv",
             "gif", "gz", "jpeg", "jpg", "lz4", "lzma", "lzx", "m2v", "m4v", "mkv", "mp3", "mp4",
             "mpg", "ogg", "onepkg", "png", "pptx", "rar", "vob", "vssx", "vstx", "wma", "wmf",
             "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd",
-        ];
+        ].into_iter().map(String::from).collect();
 
         let mut last_status = Instant::now();
 
@@ -141,7 +143,13 @@ impl Background for FolderScan {
                 .strip_prefix(&self.path)
                 .unwrap_or_else(|_e| entry.path())
                 .to_path_buf();
-            let extension = entry.path().extension().and_then(std::ffi::OsStr::to_str);
+            let extension = entry
+                .path()
+                .extension()
+                .and_then(std::ffi::OsStr::to_str)
+                .map(|s| {
+                    s.to_ascii_lowercase()
+                });
 
             let fi = FileInfo {
                 path: shortname,
@@ -153,7 +161,7 @@ impl Background for FolderScan {
                 ds.compressed.push(fi);
             } else if logical > 4096
                 && !extension
-                    .map(|ext| skip_exts.iter().any(|ex| ex.eq_ignore_ascii_case(ext)))
+                    .map(|ext| skip_exts.contains(&ext))
                     .unwrap_or_default()
             {
                 ds.compressible.push(fi);

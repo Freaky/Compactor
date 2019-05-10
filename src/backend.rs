@@ -2,10 +2,11 @@ use crate::background::BackgroundHandle;
 use crate::compact;
 use crate::folder::{FolderInfo, FolderScan, FolderSummary};
 use crate::gui::{GuiRequest, GuiResponse, GuiWrapper};
+use crate::compact::{Compacted, Compact, BackgroundCompactor};
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crossbeam_channel::{Receiver, RecvTimeoutError};
+use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
 
 use std::time::Duration;
 
@@ -52,10 +53,10 @@ impl<T> Backend<T> {
                     self.scan_loop(path);
                 }
                 Ok(GuiRequest::Compress) if self.info.is_some() => {
-                    self.compress_loop(Mode::Compress);
+                    self.compress_loop();
                 }
                 Ok(GuiRequest::Decompress) if self.info.is_some() => {
-                    self.compress_loop(Mode::Decompress);
+                    // self.compact_loop(Mode::Decompress);
                 }
                 Ok(msg) => {
                     eprintln!("Backend: Ignored message: {:?}", msg);
@@ -123,5 +124,87 @@ impl<T> Backend<T> {
         }
     }
 
-    fn compress_loop(&mut self, _mode: Mode) {}
+    fn compress_loop(&mut self) {
+        let (send_file, send_file_rx) = bounded::<Option<PathBuf>>(512);
+        let (recv_result_tx, recv_result) = bounded::<Compacted>(512);
+
+        let compact = Compact::default();
+        let compactor = BackgroundCompactor::new(send_file_rx, recv_result_tx, compact);
+        let task = BackgroundHandle::spawn(compactor);
+        let start = Instant::now();
+
+        let mut fi = self.info.take().expect("fileinfo");
+        let mut idx = 0;
+        let mut done = 0;
+        let total = fi.compressible.files.len();
+
+        self.gui.status("Compacting".to_string(), Some(0.0));
+        loop {
+            while idx < total &&
+                send_file.try_send(Some(fi.path.join(&fi.compressible.files[idx].path))).is_ok() {
+                idx += 1;
+
+                if idx == total {
+                    send_file.send(None).unwrap();
+                }
+            }
+
+            let msg = self.msg.recv_timeout(Duration::from_millis(25));
+            match msg {
+                Ok(GuiRequest::Pause) => {
+                    task.pause();
+                    self.gui.status("Pausing".to_string(), Some(done as f32 / total as f32));
+                    self.gui.paused();
+                }
+                Ok(GuiRequest::Resume) => {
+                    task.resume();
+                    self.gui.status("Compacting".to_string(), Some(done as f32 / total as f32));
+                    self.gui.resumed();
+                }
+                Ok(GuiRequest::Stop) | Err(RecvTimeoutError::Disconnected) => {
+                    task.cancel();
+                }
+                Ok(msg) => {
+                    eprintln!("Ignored message: {:?}", msg);
+                }
+                Err(RecvTimeoutError::Timeout) => (),
+            }
+
+            while let Ok(completed) = recv_result.try_recv() {
+                done += 1;
+                fi.compressible.physical_size -= completed.old_size;
+                fi.compressible.logical_size -= completed.old_size;
+
+                fi.compressed.physical_size += completed.old_size;
+                fi.compressed.logical_size += completed.new_size;
+
+                fi.physical_size -= completed.old_size;
+                fi.physical_size += completed.new_size;
+            }
+
+            self.gui.status("Compacting".to_string(), Some(done as f32 / total as f32));
+            self.gui.summary(fi.summary());
+
+            match task.wait_timeout(Duration::from_millis(25)) {
+                Some(Ok(())) => {
+                    self.gui
+                        .status(format!("Compacted in {:.2?}", start.elapsed()), Some(done as f32 / total as f32));
+                    self.gui.summary(fi.summary());
+                    self.gui.scanned();
+                    self.info = Some(fi);
+                    break;
+                }
+                Some(Err(msg)) => {
+                    eprintln!("Error: {}", msg);
+                    self.gui
+                        .status(format!("Stopped after {:.2?}", start.elapsed()), Some(done as f32 / total as f32));
+                    self.gui.summary(fi.summary());
+                    self.gui.stopped();
+                    self.info = Some(fi);
+                    break;
+                }
+                None => ()
+            }
+        }
+    }
 }
