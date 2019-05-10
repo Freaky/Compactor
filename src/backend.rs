@@ -17,9 +17,10 @@ pub struct Backend<T> {
     info: Option<FolderInfo>,
 }
 
-enum Mode {
-    Compress,
-    Decompress,
+fn format_size(size: u64) -> String {
+    use humansize::{FileSize, file_size_opts as options};
+
+    size.file_size(options::BINARY).expect("file size")
 }
 
 impl<T> Backend<T> {
@@ -222,12 +223,13 @@ impl<T> Backend<T> {
                         break;
                     }
 
-                    if !waiting {
+                    if !waiting && last_update.elapsed() > Duration::from_millis(50) {
                         self.gui.status(
                             format!("Compacting: {}", fi.path.display()),
                             Some(done as f32 / total as f32),
                         );
 
+                        last_update = Instant::now();
                         waiting = true;
                     }
 
@@ -267,10 +269,10 @@ impl<T> Backend<T> {
         let new_size = folder.physical_size;
 
         let msg = format!(
-            "Compacted {}/{} files saving {} bytes in {:.2?}",
+            "Compacted {}/{} files saving {} in {:.2?}",
             done,
             total,
-            old_size - new_size,
+            format_size(old_size - new_size),
             start.elapsed()
         );
 
@@ -339,7 +341,7 @@ impl<T> Backend<T> {
 
             if last_update.elapsed() > Duration::from_millis(50) {
                 self.gui
-                    .status("Decompacting".to_string(), Some(done as f32 / total as f32));
+                    .status("Expanding".to_string(), Some(done as f32 / total as f32));
                 last_update = Instant::now();
 
                 self.gui.summary(folder.summary());
@@ -372,12 +374,13 @@ impl<T> Backend<T> {
                         break;
                     }
 
-                    if !waiting {
+                    if !waiting && last_update.elapsed() > Duration::from_millis(50) {
                         self.gui.status(
                             format!("Expanding: {}", fi.path.display()),
                             Some(done as f32 / total as f32),
                         );
 
+                        last_update = Instant::now();
                         waiting = true;
                     }
 
@@ -417,10 +420,10 @@ impl<T> Backend<T> {
         let new_size = folder.physical_size;
 
         let msg = format!(
-            "Expanded {}/{} files wasting {} bytes in {:.2?}",
+            "Expanded {}/{} files wasting {} in {:.2?}",
             done,
             total,
-            new_size - old_size,
+            format_size(new_size - old_size),
             start.elapsed()
         );
 
