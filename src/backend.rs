@@ -151,10 +151,8 @@ impl<T> Backend<T> {
         self.gui.status("Compacting".to_string(), Some(0.0));
         loop {
             while paused && !stopped {
-                self.gui.status(
-                    "Paused".to_string(),
-                    Some(done as f32 / total as f32),
-                );
+                self.gui
+                    .status("Paused".to_string(), Some(done as f32 / total as f32));
 
                 self.gui.summary(folder.summary());
 
@@ -163,10 +161,8 @@ impl<T> Backend<T> {
                         paused = true;
                     }
                     Ok(GuiRequest::Resume) => {
-                        self.gui.status(
-                            "Compacting".to_string(),
-                            Some(done as f32 / total as f32),
-                        );
+                        self.gui
+                            .status("Compacting".to_string(), Some(done as f32 / total as f32));
                         self.gui.resumed();
                         paused = false;
                         last_update = Instant::now();
@@ -188,10 +184,8 @@ impl<T> Backend<T> {
             }
 
             if last_update.elapsed() > Duration::from_millis(50) {
-                self.gui.status(
-                    "Compacting".to_string(),
-                    Some(done as f32 / total as f32),
-                );
+                self.gui
+                    .status("Compacting".to_string(), Some(done as f32 / total as f32));
                 last_update = Instant::now();
 
                 self.gui.summary(folder.summary());
@@ -272,12 +266,15 @@ impl<T> Backend<T> {
 
         let new_size = folder.physical_size;
 
-        let msg = format!("Compacted {}/{} files saving {} bytes in {:.2?}", done, total, old_size - new_size, start.elapsed());
-
-        self.gui.status(
-            msg,
-            Some(done as f32 / total as f32),
+        let msg = format!(
+            "Compacted {}/{} files saving {} bytes in {:.2?}",
+            done,
+            total,
+            old_size - new_size,
+            start.elapsed()
         );
+
+        self.gui.status(msg, Some(done as f32 / total as f32));
         self.gui.summary(folder.summary());
         self.gui.scanned();
 
@@ -308,10 +305,8 @@ impl<T> Backend<T> {
         self.gui.status("Expanding".to_string(), Some(0.0));
         loop {
             while paused && !stopped {
-                self.gui.status(
-                    "Paused".to_string(),
-                    Some(done as f32 / total as f32),
-                );
+                self.gui
+                    .status("Paused".to_string(), Some(done as f32 / total as f32));
 
                 self.gui.summary(folder.summary());
 
@@ -320,10 +315,8 @@ impl<T> Backend<T> {
                         paused = true;
                     }
                     Ok(GuiRequest::Resume) => {
-                        self.gui.status(
-                            "Expanding".to_string(),
-                            Some(done as f32 / total as f32),
-                        );
+                        self.gui
+                            .status("Expanding".to_string(), Some(done as f32 / total as f32));
                         self.gui.resumed();
                         paused = false;
                         last_update = Instant::now();
@@ -345,10 +338,8 @@ impl<T> Backend<T> {
             }
 
             if last_update.elapsed() > Duration::from_millis(50) {
-                self.gui.status(
-                    "Decompacting".to_string(),
-                    Some(done as f32 / total as f32),
-                );
+                self.gui
+                    .status("Decompacting".to_string(), Some(done as f32 / total as f32));
                 last_update = Instant::now();
 
                 self.gui.summary(folder.summary());
@@ -425,12 +416,15 @@ impl<T> Backend<T> {
 
         let new_size = folder.physical_size;
 
-        let msg = format!("Expanded {}/{} files wasting {} bytes in {:.2?}", done, total, new_size - old_size, start.elapsed());
-
-        self.gui.status(
-            msg,
-            Some(done as f32 / total as f32),
+        let msg = format!(
+            "Expanded {}/{} files wasting {} bytes in {:.2?}",
+            done,
+            total,
+            new_size - old_size,
+            start.elapsed()
         );
+
+        self.gui.status(msg, Some(done as f32 / total as f32));
         self.gui.summary(folder.summary());
         self.gui.scanned();
 

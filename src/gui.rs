@@ -55,7 +55,7 @@ pub enum GuiResponse {
     Resumed,
     Scanned,
     Stopped,
-    Compacting
+    Compacting,
 }
 
 pub struct GuiWrapper<T>(Handle<T>);

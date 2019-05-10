@@ -42,7 +42,7 @@ impl Background for BackgroundCompactor {
                 Some(file) => {
                     let ret = match self.compression {
                         Some(compression) => Compact::compress_file(&file, compression),
-                        None => Compact::uncompress_file(&file).map(|_| true)
+                        None => Compact::uncompress_file(&file).map(|_| true),
                     };
 
                     if self.files_out.send((file, ret)).is_err() {
