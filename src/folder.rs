@@ -1,9 +1,13 @@
+use std::collections::HashSet;
+use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use filesize::file_real_size;
 use ignore::WalkBuilder;
 use serde_derive::Serialize;
-use std::time::{Duration, Instant};
+
+use crate::background::{Background, ControlToken};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FileInfo {
@@ -86,9 +90,11 @@ impl FolderScan {
     }
 }
 
-use crate::background::{Background, ControlToken};
-
-use std::collections::HashSet;
+const FILE_ATTRIBUTE_READONLY: u32 = 1;
+const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
+const FILE_ATTRIBUTE_SYSTEM: u32 = 4;
+const FILE_ATTRIBUTE_TEMPORARY: u32 = 256;
+const FILE_ATTRIBUTE_COMPRESSED: u32 = 2048;
 
 impl Background for FolderScan {
     type Output = Result<FolderInfo, FolderInfo>;
@@ -109,7 +115,10 @@ impl Background for FolderScan {
             "gif", "gz", "jpeg", "jpg", "lz4", "lzma", "lzx", "m2v", "m4v", "mkv", "mp3", "mp4",
             "mpg", "ogg", "onepkg", "png", "pptx", "rar", "vob", "vssx", "vstx", "wma", "wmf",
             "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd",
-        ].into_iter().map(String::from).collect();
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect();
 
         let mut last_status = Instant::now();
 
@@ -147,9 +156,7 @@ impl Background for FolderScan {
                 .path()
                 .extension()
                 .and_then(std::ffi::OsStr::to_str)
-                .map(|s| {
-                    s.to_ascii_lowercase()
-                });
+                .map(str::to_ascii_lowercase);
 
             let fi = FileInfo {
                 path: shortname,
@@ -157,16 +164,19 @@ impl Background for FolderScan {
                 physical_size: physical,
             };
 
-            if physical < logical {
-                ds.compressed.push(fi);
-            } else if logical > 4096
-                && !extension
+            if logical <= 4096
+                || metadata.file_attributes()
+                    & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY)
+                    != 0
+                || extension
                     .map(|ext| skip_exts.contains(&ext))
                     .unwrap_or_default()
             {
-                ds.compressible.push(fi);
-            } else {
                 ds.skipped.push(fi);
+            } else if physical < logical {
+                ds.compressed.push(fi);
+            } else {
+                ds.compressible.push(fi);
             }
         }
 
