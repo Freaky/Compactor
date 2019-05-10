@@ -183,6 +183,7 @@ var Response = (function() {
 				case "Resumed":
 				case "Stopped":
 				case "Scanned":
+				case "Compacting":
 					Gui[msg.type.toLowerCase()]();
 					break;
 
@@ -249,6 +250,15 @@ var Gui = (function() {
 			$("#Button_Compress").hide();
 			$("#Button_Decompress").hide();
 			$("#Command").show();
+		},
+
+		compacting: function() {
+			$("#Button_Pause").show();
+			$("#Button_Resume").hide();
+			$("#Button_Stop").show();
+			$("#Button_Analyse").hide();
+			$("#Button_Compress").hide();
+			$("#Button_Decompress").hide();
 		},
 
 		paused: function() {

@@ -55,6 +55,7 @@ pub enum GuiResponse {
     Resumed,
     Scanned,
     Stopped,
+    Compacting
 }
 
 pub struct GuiWrapper<T>(Handle<T>);
@@ -108,6 +109,10 @@ impl<T> GuiWrapper<T> {
 
     pub fn stopped(&self) {
         self.send(&GuiResponse::Stopped);
+    }
+
+    pub fn compacting(&self) {
+        self.send(&GuiResponse::Compacting);
     }
 
     pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {

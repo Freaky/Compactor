@@ -20,7 +20,7 @@
       </section>
 
       <section id="Activity" style="display: none;">
-        <div id="Activity_Text" class="ctr"></div>
+        <div id="Activity_Text" class="ctr" style="overflow: hidden"></div>
         <div class="ctr">
           <progress id="Activity_Progress" style="width: 95%;"></progress>
         </div>
@@ -55,6 +55,8 @@
     </section>
 
     <section class="page" id="Settings" style="display: none;">
+      <p>(Not hooked up yet)</p>
+
       <fieldset><legend>Compression</legend><br>
         <select id="Compression_Mode" name="Compression">
           <option value="XPRESS4K">XPRESS4K (fast, low compression)</option>
@@ -116,25 +118,26 @@
     </section>
 
     <section class="page" id="About" style="display: none;">
+      <h1>WONKY PRERELEASE EDITION</h1>
+
+      <p>You have backups, right?</p>
+
+      <p>Problem reports: Freaky @ irc.arcnet-irc.org or tom@hur.st</p>
+
+      <hr>
+
       <p>
-        A tiny interface to Microsoft's <a href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact"><code>compact.exe</code></a>.
+        A tiny graphical interface to Windows 10's transparent filesystem compression.
       </p>
 
       <p>
-        Written in <a href="https://www.rust-lang.org/">Rust</a> by <a href="https://hur.st/">Thomas Hurst</a>.
+        Written in <a href="https://www.rust-lang.org/">Rust</a> by
+        <a href="https://hur.st/">Thomas Hurst</a>.
       </p>
 
       <p>
-        GUI provided by <a href="https://crates.io/crates/web-view">web-view</a>.  Welcome to the future where everything's
-        a web browser.  Yes, even you.
-      </p>
-
-      <p>
-        Source code is available at <a href="https://github.com/Freaky/compact">https://github.com/Freaky/compact</a>.
-      </p>
-
-      <p>
-        Please report any problems at <a href="https://github.com/Freaky/compact/issues">Github</a>.
+        GUI provided by <a href="https://crates.io/crates/web-view">web-view</a>.
+        Welcome to the future where everything's a web browser.  Yes, even you.
       </p>
 
       <p>

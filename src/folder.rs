@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -18,7 +19,7 @@ pub struct FileInfo {
 
 #[derive(Debug, Clone, Serialize, Default)]
 pub struct GroupInfo {
-    pub files: Vec<FileInfo>,
+    pub files: VecDeque<FileInfo>,
     pub logical_size: u64,
     pub physical_size: u64,
 }
@@ -49,6 +50,13 @@ pub struct GroupSummary {
     pub physical_size: u64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum FileKind {
+    Compressed,
+    Compressible,
+    Skipped,
+}
+
 impl FolderInfo {
     pub fn summary(&self) -> FolderSummary {
         FolderSummary {
@@ -58,6 +66,42 @@ impl FolderInfo {
             compressed: self.compressed.summary(),
             skipped: self.skipped.summary(),
         }
+    }
+
+    pub fn len(&mut self, kind: FileKind) -> usize {
+        match kind {
+            FileKind::Compressible => self.compressible.files.len(),
+            FileKind::Compressed => self.compressed.files.len(),
+            FileKind::Skipped => self.skipped.files.len(),
+        }
+    }
+
+    pub fn pop(&mut self, kind: FileKind) -> Option<FileInfo> {
+        let ret = match kind {
+            FileKind::Compressible => self.compressible.pop(),
+            FileKind::Compressed => self.compressed.pop(),
+            FileKind::Skipped => self.skipped.pop(),
+        };
+
+        if let Some(fi) = ret {
+            self.logical_size -= fi.logical_size;
+            self.physical_size -= fi.physical_size;
+
+            Some(fi)
+        } else {
+            None
+        }
+    }
+
+    pub fn push(&mut self, kind: FileKind, fi: FileInfo) {
+        self.logical_size += fi.logical_size;
+        self.physical_size += fi.physical_size;
+
+        match kind {
+            FileKind::Compressible => self.compressible.push(fi),
+            FileKind::Compressed => self.compressed.push(fi),
+            FileKind::Skipped => self.skipped.push(fi),
+        };
     }
 }
 
@@ -70,10 +114,23 @@ impl GroupInfo {
         }
     }
 
-    pub fn push(&mut self, fi: FileInfo) {
+    fn pop(&mut self) -> Option<FileInfo> {
+        let ret = self.files.pop_front();
+
+        if let Some(fi) = ret {
+            self.logical_size -= fi.logical_size;
+            self.physical_size -= fi.physical_size;
+
+            Some(fi)
+        } else {
+            None
+        }
+    }
+
+    fn push(&mut self, fi: FileInfo) {
         self.logical_size += fi.logical_size;
         self.physical_size += fi.physical_size;
-        self.files.push(fi);
+        self.files.push_back(fi);
     }
 }
 
