@@ -2,6 +2,7 @@
 name = "compactor"
 version = "0.1.0"
 authors = ["Thomas Hurst <tom@hur.st>"]
+description = "An interface to Windows 10 filesystem compression"
 edition = "2018"
 
 [dependencies]
@@ -23,3 +24,9 @@ humansize = "1.1.0"
 
 [build-dependencies]
 vergen = "3"
+winres = "0.1"
+
+[profile.release]
+lto = true
+opt-level="z"
+codegen-units = 1

@@ -157,8 +157,6 @@ pub fn spawn_gui() {
     html.push_str("\n</script>\n");
     html.push_str(HTML_REST);
 
-    std::fs::write("test.html", &html).unwrap();
-
     let (from_gui, from_gui_rx) = bounded::<GuiRequest>(128);
 
     let mut webview = web_view::builder()
