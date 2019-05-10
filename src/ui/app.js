@@ -175,6 +175,10 @@ var Response = (function() {
 					Gui.set_folder(msg.path);
 					break;
 
+				case "Version":
+					Gui.version(msg.date, msg.version);
+					break;
+
 				case "Status":
 					Gui.set_status(msg.status, msg.pct);
 					break;
@@ -211,6 +215,11 @@ var Gui = (function() {
 			$("#Button_Page_" + page).addClass("active");
 			$("section.page").hide();
 			$("#" + page).show();
+		},
+
+		version: function(date, version) {
+			$(".compile-date").text(date);
+			$(".version").text(version);
 		},
 
 		set_folder: function(folder) {

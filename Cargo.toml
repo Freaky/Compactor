@@ -20,3 +20,6 @@ open = "1.2.2"
 ctrlc = "3.0"
 regex = "1.1.6"
 humansize = "1.1.0"
+
+[build-dependencies]
+vergen = "3"

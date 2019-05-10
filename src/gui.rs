@@ -48,6 +48,7 @@ pub enum GuiRequest {
 #[derive(Serialize)]
 #[serde(tag = "type")]
 pub enum GuiResponse {
+    Version { date: String, version: String },
     Folder { path: PathBuf },
     Status { status: String, pct: Option<f32> },
     FolderSummary { info: FolderSummary },
@@ -62,7 +63,9 @@ pub struct GuiWrapper<T>(Handle<T>);
 
 impl<T> GuiWrapper<T> {
     pub fn new(handle: Handle<T>) -> Self {
-        Self(handle)
+        let gui = Self(handle);
+        gui.version();
+        gui
     }
 
     pub fn send(&self, msg: &GuiResponse) {
@@ -76,6 +79,14 @@ impl<T> GuiWrapper<T> {
                 wv.eval(&js)
             })
             .ok(); // let errors bubble through via messages
+    }
+
+    pub fn version(&self) {
+        let version = GuiResponse::Version {
+            date: env!("VERGEN_BUILD_DATE").to_string(),
+            version: format!("{}-{}", env!("VERGEN_SEMVER"), env!("VERGEN_SHA_SHORT"))
+        };
+        self.send(&version);
     }
 
     pub fn summary(&self, info: FolderSummary) {
