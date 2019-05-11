@@ -2,13 +2,13 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use filesize::file_real_size;
+use globset::GlobSet;
 use ignore::WalkBuilder;
 use serde_derive::Serialize;
-use globset::GlobSet;
 
 use crate::background::{Background, ControlToken};
 
@@ -139,14 +139,14 @@ impl GroupInfo {
 #[derive(Debug)]
 pub struct FolderScan {
     path: PathBuf,
-    excludes: Mutex<GlobSet>
+    excludes: Mutex<GlobSet>,
 }
 
 impl FolderScan {
     pub fn new<P: AsRef<Path>>(path: P, excludes: GlobSet) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            excludes: Mutex::new(excludes)
+            excludes: Mutex::new(excludes),
         }
     }
 }

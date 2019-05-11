@@ -19,7 +19,7 @@ pub struct Backend<T> {
 }
 
 fn format_size(size: u64) -> String {
-    use humansize::{FileSize, file_size_opts as options};
+    use humansize::{file_size_opts as options, FileSize};
 
     size.file_size(options::BINARY).expect("file size")
 }

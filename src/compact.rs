@@ -5,9 +5,11 @@ use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::Path;
 
-use winapi::shared::minwindef::{BOOL, PBOOL, PULONG, ULONG};
+use winapi::shared::minwindef::{BOOL, DWORD, PBOOL, PULONG, ULONG};
 use winapi::shared::ntdef::PVOID;
 use winapi::shared::winerror::{HRESULT_CODE, SUCCEEDED};
+use winapi::um::ioapiset::DeviceIoControl;
+use winapi::um::winioctl::{FSCTL_DELETE_EXTERNAL_BACKING, FSCTL_SET_EXTERNAL_BACKING};
 use winapi::um::winnt::{HANDLE, HRESULT, LPCWSTR};
 use winapi::STRUCT;
 
@@ -143,6 +145,8 @@ impl Compact {
     ) -> std::io::Result<bool> {
         let file = std::fs::File::open(path)?;
 
+        // DeviceIoControl can do this too, but it's a bit more fiddly
+        // needs two structs instead of one, concatenated together in a buffer
         let info = _WOF_FILE_COMPRESSION_INFO_V1 {
             Algorithm: compression.to_api(),
             Flags: 0,
@@ -171,13 +175,29 @@ impl Compact {
         }
     }
 
-    // compact.exe uses FltFsControlFile() with FSCTL_DELETE_EXTERNAL_BACKING
-    // this is a reasonable workalike and much simpler.
     pub fn uncompress_file<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-        std::fs::OpenOptions::new()
-            .append(true)
-            .open(path)
-            .map(|_| ())
+        let file = std::fs::File::open(path)?;
+
+        let mut bytes_returned: DWORD = 0;
+
+        let ret = unsafe {
+            DeviceIoControl(
+                file.as_raw_handle() as HANDLE,
+                FSCTL_DELETE_EXTERNAL_BACKING,
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null_mut(),
+                0,
+                &mut bytes_returned,
+                std::ptr::null_mut(),
+            )
+        };
+
+        if SUCCEEDED(ret) {
+            Ok(())
+        } else {
+            Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
+        }
     }
 }
 
