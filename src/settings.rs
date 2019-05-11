@@ -54,7 +54,7 @@ impl Default for Settings {
                 "*.zip",
                 "*.zst",
                 "*.zstd",
-                "*.{bik,bk2,pc_binkvid}",
+                "*.{bik,bk2,bnk,pc_binkvid}",
             ]
             .into_iter()
             .map(String::from)
