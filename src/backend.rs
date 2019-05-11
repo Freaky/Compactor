@@ -11,6 +11,7 @@ use crate::compression::BackgroundCompactor;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
 use crate::settings::Settings;
+use crate::filesdb::FilesDb;
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
@@ -151,6 +152,8 @@ impl<T> Backend<T> {
 
         let old_size = folder.physical_size;
 
+        let mut incompressible = FilesDb::borrow();
+
         self.gui.compacting();
 
         self.gui.status("Compacting".to_string(), Some(0.0));
@@ -215,6 +218,7 @@ impl<T> Backend<T> {
                                 folder.push(FileKind::Compressed, fi);
                             }
                             Ok(false) => {
+                                incompressible.insert(path);
                                 folder.push(FileKind::Skipped, fi);
                             }
                             Err(err) => {

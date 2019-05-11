@@ -1,11 +1,11 @@
 use std::io;
 use std::path::PathBuf;
 
+use crossbeam_channel::{Receiver, Sender};
+
 use crate::background::Background;
 use crate::background::ControlToken;
 use crate::compact::{Compact, Compression};
-
-use crossbeam_channel::{Receiver, Sender};
 
 #[derive(Debug)]
 pub struct BackgroundCompactor {

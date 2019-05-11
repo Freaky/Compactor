@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+
 use std::collections::VecDeque;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
@@ -11,6 +11,7 @@ use ignore::WalkBuilder;
 use serde_derive::Serialize;
 
 use crate::background::{Background, ControlToken};
+use crate::filesdb::FilesDb;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FileInfo {
@@ -60,6 +61,17 @@ pub enum FileKind {
 }
 
 impl FolderInfo {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            path: path.as_ref().to_owned(),
+            logical_size: 0,
+            physical_size: 0,
+            compressible: GroupInfo::default(),
+            compressed: GroupInfo::default(),
+            skipped: GroupInfo::default(),
+        }
+    }
+
     pub fn summary(&self) -> FolderSummary {
         FolderSummary {
             logical_size: self.logical_size,
@@ -162,16 +174,9 @@ impl Background for FolderScan {
     type Status = (PathBuf, FolderSummary);
 
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
-        let mut ds = FolderInfo {
-            path: self.path.clone(),
-            logical_size: 0,
-            physical_size: 0,
-            compressible: GroupInfo::default(),
-            compressed: GroupInfo::default(),
-            skipped: GroupInfo::default(),
-        };
-
+        let mut ds = FolderInfo::new(&self.path);
         let excludes = self.excludes.lock().expect("exclude lock");
+        let incompressible = FilesDb::borrow();
 
         let mut last_status = Instant::now();
 
@@ -185,10 +190,6 @@ impl Background for FolderScan {
             .enumerate();
 
         for (count, (entry, metadata, physical)) in walker {
-            let logical = metadata.len();
-            ds.logical_size += logical;
-            ds.physical_size += physical;
-
             let shortname = entry
                 .path()
                 .strip_prefix(&self.path)
@@ -197,34 +198,33 @@ impl Background for FolderScan {
 
             let fi = FileInfo {
                 path: shortname,
-                logical_size: logical,
+                logical_size: metadata.len(),
                 physical_size: physical,
             };
 
-            if count % 128 == 0 {
+            if count % 8 == 0 {
                 if control.is_cancelled_with_pause() {
                     return Err(ds);
                 }
 
-                if last_status.elapsed() >= Duration::from_millis(100) {
+                if last_status.elapsed() >= Duration::from_millis(50) {
                     last_status = Instant::now();
                     control.set_status((fi.path.clone(), ds.summary()));
                 }
             }
 
-            // FIXME: excluded compressed files should still be classed as compressed,
-            // just... excluded.
-            if logical <= 4096
+            if fi.logical_size <= 4096
                 || metadata.file_attributes()
                     & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY)
                     != 0
+                || incompressible.contains(entry.path())
                 || excludes.is_match(entry.path())
             {
-                ds.skipped.push(fi);
-            } else if physical < logical {
-                ds.compressed.push(fi);
+                ds.push(FileKind::Skipped, fi);
+            } else if fi.physical_size < fi.logical_size {
+                ds.push(FileKind::Compressed, fi);
             } else {
-                ds.compressible.push(fi);
+                ds.push(FileKind::Compressible, fi);
             }
         }
 

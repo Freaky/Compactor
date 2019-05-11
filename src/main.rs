@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 
+mod filesdb;
 mod backend;
 mod background;
 mod compact;
