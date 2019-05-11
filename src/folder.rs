@@ -159,7 +159,7 @@ const FILE_ATTRIBUTE_COMPRESSED: u32 = 2048;
 
 impl Background for FolderScan {
     type Output = Result<FolderInfo, FolderInfo>;
-    type Status = FolderSummary;
+    type Status = (PathBuf, FolderSummary);
 
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
         let mut ds = FolderInfo {
@@ -185,17 +185,6 @@ impl Background for FolderScan {
             .enumerate();
 
         for (count, (entry, metadata, physical)) in walker {
-            if count % 128 == 0 {
-                if control.is_cancelled_with_pause() {
-                    return Err(ds);
-                }
-
-                if last_status.elapsed() >= Duration::from_millis(100) {
-                    last_status = Instant::now();
-                    control.set_status(ds.summary());
-                }
-            }
-
             let logical = metadata.len();
             ds.logical_size += logical;
             ds.physical_size += physical;
@@ -211,6 +200,17 @@ impl Background for FolderScan {
                 logical_size: logical,
                 physical_size: physical,
             };
+
+            if count % 128 == 0 {
+                if control.is_cancelled_with_pause() {
+                    return Err(ds);
+                }
+
+                if last_status.elapsed() >= Duration::from_millis(100) {
+                    last_status = Instant::now();
+                    control.set_status((fi.path.clone(), ds.summary()));
+                }
+            }
 
             // FIXME: excluded compressed files should still be classed as compressed,
             // just... excluded.

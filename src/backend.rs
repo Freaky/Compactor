@@ -124,7 +124,8 @@ impl<T> Backend<T> {
                 }
                 None => {
                     if let Some(status) = task.status() {
-                        self.gui.summary(status);
+                        self.gui.status(format!("Scanning: {}", status.0.display()), None);
+                        self.gui.summary(status.1);
                     }
                 }
             }
