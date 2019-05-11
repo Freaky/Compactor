@@ -187,20 +187,22 @@ impl<T> Backend<T> {
                 break;
             }
 
-            if last_update.elapsed() > Duration::from_millis(50) {
-                self.gui
-                    .status("Compacting".to_string(), Some(done as f32 / total as f32));
-                last_update = Instant::now();
-
-                self.gui.summary(folder.summary());
-            }
+            let mut displayed = false;
 
             if let Some(mut fi) = folder.pop(FileKind::Compressible) {
                 send_file
                     .send(Some(folder.path.join(&fi.path)))
                     .expect("send_file");
 
-                let mut waiting = false;
+                if !displayed && last_update.elapsed() > Duration::from_millis(50) {
+                    self.gui
+                        .status(format!("Compacting: {}", fi.path.display()), Some(done as f32 / total as f32));
+                    last_update = Instant::now();
+                    displayed = true;
+
+                    self.gui.summary(folder.summary());
+                }
+
                 loop {
                     if let Ok((path, result)) = recv_result.recv_timeout(Duration::from_millis(25))
                     {
@@ -226,14 +228,15 @@ impl<T> Backend<T> {
                         break;
                     }
 
-                    if !waiting && last_update.elapsed() > Duration::from_millis(50) {
+                    if !displayed && last_update.elapsed() > Duration::from_millis(50) {
                         self.gui.status(
                             format!("Compacting: {}", fi.path.display()),
                             Some(done as f32 / total as f32),
                         );
 
+                        self.gui.summary(folder.summary());
                         last_update = Instant::now();
-                        waiting = true;
+                        displayed = true;
                     }
 
                     match self.msg.try_recv() {
