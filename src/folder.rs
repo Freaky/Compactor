@@ -3,10 +3,12 @@ use std::collections::VecDeque;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+use std::sync::Mutex;
 
 use filesize::file_real_size;
 use ignore::WalkBuilder;
 use serde_derive::Serialize;
+use globset::GlobSet;
 
 use crate::background::{Background, ControlToken};
 
@@ -137,12 +139,14 @@ impl GroupInfo {
 #[derive(Debug)]
 pub struct FolderScan {
     path: PathBuf,
+    excludes: Mutex<GlobSet>
 }
 
 impl FolderScan {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P, excludes: GlobSet) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
+            excludes: Mutex::new(excludes)
         }
     }
 }
@@ -167,15 +171,7 @@ impl Background for FolderScan {
             skipped: GroupInfo::default(),
         };
 
-        let skip_exts: HashSet<String> = vec![
-            "7z", "aac", "avi", "bik", "bmp", "br", "bz2", "cab", "dl_", "docx", "flac", "flv",
-            "gif", "gz", "jpeg", "jpg", "lz4", "lzma", "lzx", "m2v", "m4v", "mkv", "mp3", "mp4",
-            "mpg", "ogg", "onepkg", "png", "pptx", "rar", "vob", "vssx", "vstx", "wma", "wmf",
-            "wmv", "xap", "xlsx", "xz", "zip", "zst", "zstd",
-        ]
-        .into_iter()
-        .map(String::from)
-        .collect();
+        let excludes = self.excludes.lock().expect("exclude lock");
 
         let mut last_status = Instant::now();
 
@@ -209,11 +205,6 @@ impl Background for FolderScan {
                 .strip_prefix(&self.path)
                 .unwrap_or_else(|_e| entry.path())
                 .to_path_buf();
-            let extension = entry
-                .path()
-                .extension()
-                .and_then(std::ffi::OsStr::to_str)
-                .map(str::to_ascii_lowercase);
 
             let fi = FileInfo {
                 path: shortname,
@@ -221,13 +212,13 @@ impl Background for FolderScan {
                 physical_size: physical,
             };
 
+            // FIXME: excluded compressed files should still be classed as compressed,
+            // just... excluded.
             if logical <= 4096
                 || metadata.file_attributes()
                     & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY)
                     != 0
-                || extension
-                    .map(|ext| skip_exts.contains(&ext))
-                    .unwrap_or_default()
+                || excludes.is_match(entry.path())
             {
                 ds.skipped.push(fi);
             } else if physical < logical {
@@ -237,14 +228,6 @@ impl Background for FolderScan {
             }
         }
 
-        /*
-        ds.compressed.sort_by(|a, b| {
-            (a.physical_size as f64 / a.logical_size as f64)
-                .partial_cmp(&(b.physical_size as f64 / b.logical_size as f64))
-                .unwrap()
-        });
-        */
-
         Ok(ds)
     }
 }
@@ -252,7 +235,10 @@ impl Background for FolderScan {
 #[test]
 fn it_walks() {
     use crate::background::BackgroundHandle;
-    let scanner = FolderScan::new("C:\\Games");
+    use crate::settings::Settings;
+
+    let gs = Settings::get().globset().unwrap();
+    let scanner = FolderScan::new("C:\\Games", gs);
 
     let task = BackgroundHandle::spawn(scanner);
 

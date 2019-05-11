@@ -1,4 +1,4 @@
-use vergen::{ConstantsFlags, generate_cargo_keys};
+use vergen::{generate_cargo_keys, ConstantsFlags};
 use winres;
 
 fn main() {

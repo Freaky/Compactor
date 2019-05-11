@@ -1,6 +1,6 @@
-use crate::folder::{FolderInfo, FolderSummary};
-use std::path::Path;
-use web_view::*;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use winapi::shared::winerror;
 use winapi::um::combaseapi;
@@ -9,13 +9,15 @@ use winapi::um::shlobj;
 use winapi::um::shtypes;
 use winapi::um::winbase;
 use winapi::um::winnt;
+use web_view::*;
+use ctrlc;
+use crossbeam_channel::{bounded, Receiver};
+use serde_derive::{Deserialize, Serialize};
+use serde_json;
 
-use std::path::PathBuf;
-
-extern crate ctrlc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-
+use crate::settings::Settings;
+use crate::folder::FolderSummary;
+use crate::compact::Compression;
 use crate::backend::Backend;
 
 const HTML_HEAD: &str = include_str!("ui/head.html");
@@ -24,16 +26,13 @@ const HTML_JS_DEPS: &str = include_str!("ui/cash.min.js");
 const HTML_JS_APP: &str = include_str!("ui/app.js");
 const HTML_REST: &str = include_str!("ui/rest.html");
 
-use crossbeam_channel::{bounded, Receiver};
-
-use serde_derive::{Deserialize, Serialize};
-use serde_json;
-
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum GuiRequest {
     OpenUrl { url: String },
+    SaveSettings { compression: String, excludes: String },
+    ResetSettings,
     ChooseFolder,
     Compress,
     Decompress,
@@ -49,6 +48,9 @@ pub enum GuiRequest {
 #[serde(tag = "type")]
 pub enum GuiResponse {
     Version { date: String, version: String },
+    SettingsSaved,
+    SettingsError { msg: String },
+    SettingsReset { compression: String, excludes: String },
     Folder { path: PathBuf },
     Status { status: String, pct: Option<f32> },
     FolderSummary { info: FolderSummary },
@@ -84,7 +86,7 @@ impl<T> GuiWrapper<T> {
     pub fn version(&self) {
         let version = GuiResponse::Version {
             date: env!("VERGEN_BUILD_DATE").to_string(),
-            version: format!("{}-{}", env!("VERGEN_SEMVER"), env!("VERGEN_SHA_SHORT"))
+            version: format!("{}-{}", env!("VERGEN_SEMVER"), env!("VERGEN_SHA_SHORT")),
         };
         self.send(&version);
     }
@@ -126,6 +128,23 @@ impl<T> GuiWrapper<T> {
         self.send(&GuiResponse::Compacting);
     }
 
+    /*
+    pub fn settings_saved(&self) {
+        self.send(&GuiResponse::SettingsSaved);
+    }
+
+    pub fn settings_error<S: AsRef<str>>(&self, error: S) {
+        self.send(&GuiResponse::SettingsError { msg: error.as_ref().to_owned() });
+    }
+
+    pub fn settings_reset(&self, s: &Settings) {
+        self.send(&GuiResponse::SettingsReset {
+            compression: s.compression.to_string(),
+            excludes: s.excludes.join("\n")
+        });
+    }
+    */
+
     pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
         let (tx, rx) = bounded::<WVResult<Option<PathBuf>>>(1);
         let _ = self.0.dispatch(move |wv| {
@@ -166,10 +185,36 @@ pub fn spawn_gui() {
         .resizable(true)
         .debug(true)
         .user_data(())
-        .invoke_handler(move |_webview, arg| {
+        .invoke_handler(move |mut webview, arg| {
             match serde_json::from_str::<GuiRequest>(arg) {
                 Ok(GuiRequest::OpenUrl { url }) => {
                     open_url(url);
+                }
+                Ok(GuiRequest::SaveSettings { compression, excludes }) => {
+                    let c = Compression::from_str(compression).expect("Compression");
+                    let globs = excludes.split('\n').map(str::to_owned).collect();
+
+                    let s = Settings {
+                        compression: c,
+                        excludes: globs
+                    };
+
+                    if let Err(msg) = s.globset() {
+                        webview.dialog().error("Settings Error", msg).ok();
+                        // message_dispatch(&mut webview, &GuiResponse::SettingsError { msg });
+                    } else {
+                        webview.dialog().info("Settings Saved", "Settings Updated (but not yet saved to disk)").ok();
+                        Settings::set(s);
+                    }
+                }
+                Ok(GuiRequest::ResetSettings) => {
+                    let s = Settings::default();
+
+                    message_dispatch(&mut webview, &GuiResponse::SettingsReset {
+                        compression: s.compression.to_string(),
+                        excludes: s.excludes.join("\n")
+                    });
+                    Settings::set(s);
                 }
                 Ok(msg) => {
                     from_gui.send(msg).expect("GUI message queue");
@@ -183,6 +228,15 @@ pub fn spawn_gui() {
         })
         .build()
         .expect("WebView");
+
+        // TODO: loading
+    let s = Settings::default();
+
+    message_dispatch(&mut webview, &GuiResponse::SettingsReset {
+        compression: s.compression.to_string(),
+        excludes: s.excludes.join("\n")
+    });
+    Settings::set(s);
 
     let gui = GuiWrapper::new(webview.handle());
     let mut backend = Backend::new(gui, from_gui_rx);
@@ -211,6 +265,16 @@ pub fn spawn_gui() {
     eprintln!("Waiting for background worker to finish");
     bg.join().expect("background thread");
     eprintln!("Exiting");
+}
+
+fn message_dispatch<T>(wv: &mut web_view::WebView<'_, T>, msg: &GuiResponse) {
+    let js = format!(
+        "Response.dispatch({})",
+        serde_json::to_string(msg).expect("serialize")
+    );
+
+    println!("Eval: {}", js);
+    wv.eval(&js).ok();
 }
 
 fn open_url<U: AsRef<str>>(url: U) {

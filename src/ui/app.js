@@ -132,6 +132,14 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'OpenUrl', url: url }));
 		},
 
+		reset_settings: function() {
+			external.invoke(JSON.stringify({ type: 'ResetSettings' }));
+		},
+
+		save_settings: function(compression, excludes) {
+			external.invoke(JSON.stringify({ type: 'SaveSettings', compression: compression, excludes: excludes }));
+		},
+
 		choose_folder: function() {
 			external.invoke(JSON.stringify({ type: 'ChooseFolder' }));
 		},
@@ -171,6 +179,11 @@ var Response = (function() {
 	return {
 		dispatch: function(msg) {
 			switch(msg.type) {
+				case "SettingsReset":
+					Gui.set_compression(msg.compression);
+					Gui.set_excludes(msg.excludes);
+					break;
+
 				case "Folder":
 					Gui.set_folder(msg.path);
 					break;
@@ -208,6 +221,14 @@ var Gui = (function() {
 				Action.open_url($(this).attr("href"));
 				return false;
 			});
+
+			$("#Button_Save").on("click", function() {
+				Action.save_settings($("#Compression_Mode").val(), $("#Excludes").val());
+			});
+
+			$("#Button_Reset").on("click", function() {
+				Action.reset_settings();
+			})
 		},
 
 		page: function(page) {
@@ -220,6 +241,14 @@ var Gui = (function() {
 		version: function(date, version) {
 			$(".compile-date").text(date);
 			$(".version").text(version);
+		},
+
+		set_compression: function(compression) {
+			$("#Compression_Mode").val(compression);
+		},
+
+		set_excludes: function(excludes) {
+			$("#Excludes").val(excludes);
 		},
 
 		set_folder: function(folder) {

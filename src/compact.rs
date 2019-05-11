@@ -7,8 +7,8 @@ use std::path::Path;
 
 use winapi::shared::minwindef::{BOOL, PBOOL, PULONG, ULONG};
 use winapi::shared::ntdef::PVOID;
+use winapi::shared::winerror::{HRESULT_CODE, SUCCEEDED};
 use winapi::um::winnt::{HANDLE, HRESULT, LPCWSTR};
-use winapi::shared::winerror::{SUCCEEDED, HRESULT_CODE};
 use winapi::STRUCT;
 
 type P_WOF_FILE_COMPRESSION_INFO_V1 = *mut _WOF_FILE_COMPRESSION_INFO_V1;
@@ -70,6 +70,16 @@ impl Compression {
             FILE_PROVIDER_COMPRESSION_XPRESS8K => Some(Compression::Xpress8k),
             FILE_PROVIDER_COMPRESSION_XPRESS16K => Some(Compression::Xpress16k),
             FILE_PROVIDER_COMPRESSION_LZX => Some(Compression::Lzx),
+            _ => None,
+        }
+    }
+
+    pub fn from_str<S: AsRef<str>>(s: S) -> Option<Self> {
+        match s.as_ref() {
+            "XPRESS4K" => Some(Compression::Xpress4k),
+            "XPRESS8K" => Some(Compression::Xpress8k),
+            "XPRESS16K" => Some(Compression::Xpress16k),
+            "LZX" => Some(Compression::Lzx),
             _ => None,
         }
     }

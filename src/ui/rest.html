@@ -9,7 +9,7 @@
           <li><button id="Button_Page_Settings" onclick="Gui.page('Settings')">☸ Settings</button></li>
           <li><button id="Button_Page_About" onclick="Gui.page('About')">⌕ About</button></li>
         </ul>
-        <div style="text-align: right;margin-top: 4px">
+        <div style="text-align: right;margin: 4px">
           <small style="color: grey;"><span class="version"></span> / <span class="compile-date"></span></small>
         </div>
       </nav>
@@ -46,7 +46,7 @@
           <div style="padding: 2px;"><span style="background-color: white;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Space_Saved">0 B</span> of <span id="Size_Logical">0 B</span> saved (<span id="Compress_Ratio">1.00</span>x, <span id="Size_Physical">0 B</span> on-disk)</div>
           <div style="padding: 2px;"><span style="background-color: green;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressed_Size">0 B</span> in <span id="File_Count_Compressed">0</span> compressed</div>
           <div style="padding: 2px;"><span style="background-color: #0079d6;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressible_Size">0 B</span> in <span id="File_Count_Compressible">0</span> compressible</div>
-          <div style="padding: 2px;"><span style="background-color: orange;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Skipped_Size">0 B</span> in <span id="File_Count_Skipped">0</span> incompressible</div>
+          <div style="padding: 2px;"><span style="background-color: orange;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Skipped_Size">0 B</span> in <span id="File_Count_Skipped">0</span> excluded</div>
         </div>
 
         <div id="File_Count_Breakdown" style="display:flex;width: 95%;font-size: smaller;border: 1px solid black;border-radius: 2px;margin: 8px auto;overflow: hidden;">
@@ -59,63 +59,20 @@
     </section>
 
     <section class="page" id="Settings" style="display: none;">
-      <p>(Not hooked up yet)</p>
+      <label>File patterns to exclude from compression<br>
+        <textarea name="exclude" id="Excludes" spellcheck="false" wrap="off"
+></textarea>
+      </fieldset></label>
 
-      <fieldset><legend>Compression</legend><br>
+      <br>
+
+      <label>Compression
         <select id="Compression_Mode" name="Compression">
           <option value="XPRESS4K">XPRESS4K (fast, low compression)</option>
-          <option value="XPRESS8K" selected>XPRESS8K (default)</option>
+          <option value="XPRESS8K">XPRESS8K (default)</option>
           <option value="XPRESS16K">XPRESS16K</option>
           <option value="LZX">LZX (slow, high compression)</option>
-        </select>
-      </fieldset>
-
-      <br>
-
-      <fieldset><legend>File patterns to exclude from compression</legend><br>
-        <textarea name="exclude" id="Excludes" spellcheck="false" wrap="off"
->*:\Windows\*
-*.7z
-*.aac
-*.avi
-*.bik
-*.bmp
-*.br
-*.bz2
-*.cab
-*.dl_
-*.docx
-*.flac
-*.flv
-*.gif
-*.gz
-*.jpeg
-*.jpg
-*.lz4
-*.lzma
-*.lzx
-*.m2v
-*.m4v
-*.mkv
-*.mp[234]
-*.mpg
-*.ogg
-*.onepkg
-*.png
-*.pptx
-*.rar
-*.vob
-*.vs[st]x
-*.wm[afv]
-*.xap
-*.xlsx
-*.xz
-*.zip
-*.zst
-*.zstd</textarea>
-      </fieldset>
-
-      <br>
+        </select></label>
 
       <button id="Button_Save" class="save">💾 Save</button>
       <button id="Button_Reset" class="cancel">⏹️ Reset</button>
@@ -126,7 +83,7 @@
 
       <p>You have backups, right?</p>
 
-      <p>Problem reports: Freaky @ irc.arcnet-irc.org or tom@hur.st</p>
+      <p>Problem reports: Freaky @ FreeNode IRC or email tom@hur.st</p>
 
       <hr>
 

@@ -10,6 +10,7 @@ use crate::compact::Compression;
 use crate::compression::BackgroundCompactor;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
+use crate::settings::Settings;
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
@@ -72,7 +73,9 @@ impl<T> Backend<T> {
     }
 
     fn scan_loop(&mut self, path: PathBuf) {
-        let scanner = FolderScan::new(path);
+        let settings = Settings::get();
+
+        let scanner = FolderScan::new(path, settings.globset().expect("globs"));
         let task = BackgroundHandle::spawn(scanner);
         let start = Instant::now();
 
