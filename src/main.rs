@@ -4,7 +4,7 @@ mod backend;
 mod background;
 mod compact;
 mod compression;
-mod compresstinate;
+mod compresstimate;
 mod filesdb;
 mod folder;
 mod gui;

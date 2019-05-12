@@ -8,7 +8,6 @@ use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
 use crate::background::BackgroundHandle;
 use crate::compact::Compression;
 use crate::compression::BackgroundCompactor;
-use crate::compresstinate::compresstinate;
 use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
@@ -135,6 +134,7 @@ impl<T> Backend<T> {
         }
     }
 
+    // Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.
     fn compress_loop(&mut self) {
         let (send_file, send_file_rx) = bounded::<Option<PathBuf>>(1);
         let (recv_result_tx, recv_result) = bounded::<(PathBuf, io::Result<bool>)>(1);
@@ -196,22 +196,9 @@ impl<T> Backend<T> {
             let mut displayed = false;
 
             if let Some(mut fi) = folder.pop(FileKind::Compressible) {
-                let fullpath = folder.path.join(&fi.path);
-                // XXX: scale ratio to size
-                if compresstinate(&fullpath).unwrap() > 0.95
-                {
-                    if last_update.elapsed() > Duration::from_millis(50) {
-                        self.gui.status(
-                            format!("Skipping: {}", fi.path.display()),
-                            Some(done as f32 / total as f32),
-                        );
-                    }
-                    incompressible.insert(fullpath);
-                    folder.push(FileKind::Skipped, fi);
-                    done += 1;
-                    continue;
-                }
-                send_file.send(Some(fullpath)).expect("send_file");
+                send_file
+                    .send(Some(folder.path.join(&fi.path)))
+                    .expect("send_file");
 
                 if !displayed && last_update.elapsed() > Duration::from_millis(50) {
                     self.gui.status(

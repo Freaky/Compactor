@@ -48,7 +48,7 @@ fn sample_size(pop: u64, moe: u8, confidence: Confidence) -> f32 {
     ((pop * n_naught) / (n_naught + pop - 1.0)).ceil()
 }
 
-pub fn compresstinate<P: AsRef<Path>>(path: P) -> io::Result<f32> {
+pub fn compresstimate<P: AsRef<Path>>(path: P) -> io::Result<f32> {
     let mut input = File::open(path)?;
     let len = input.metadata()?.len();
     let output = WriteCount::default();
