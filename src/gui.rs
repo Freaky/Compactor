@@ -16,7 +16,7 @@ use winapi::um::winbase;
 use winapi::um::winnt;
 
 use crate::backend::Backend;
-use crate::compact::Compression;
+use crate::compact::{Compact, Compression};
 use crate::folder::FolderSummary;
 use crate::settings::Settings;
 
@@ -155,6 +155,8 @@ impl<T> GuiWrapper<T> {
     }
 }
 
+pub fn is_supported_os() {}
+
 pub fn spawn_gui() {
     let signalled = Arc::new(AtomicBool::new(false));
     let r = signalled.clone();
@@ -252,6 +254,20 @@ pub fn spawn_gui() {
     );
     Settings::set(s);
 
+    if !Compact::system_supports_compression().unwrap_or_default() {
+        webview
+            .dialog()
+            .error(
+                "Unsupported OS",
+                "Compactor requires Windows 10 features, \
+                and is completely untested on older systems.\n\n\
+                Proceed if you fancy being a guinea pig.\n\n\
+                Analysis will probably work, \
+                compression and decompression will not."
+            )
+            .ok();
+    }
+
     let gui = GuiWrapper::new(webview.handle());
     let mut backend = Backend::new(gui, from_gui_rx);
     let bg = std::thread::spawn(move || {
@@ -297,6 +313,7 @@ fn open_url<U: AsRef<str>>(url: U) {
 
 fn set_dpi_aware() {
     use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE};
+    dbg!(PROCESS_SYSTEM_DPI_AWARE);
 
     unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) };
 }

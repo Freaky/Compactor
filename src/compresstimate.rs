@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use lz4::EncoderBuilder;
 

@@ -1,6 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
 
-use std::ffi::OsStr;
+use std::ffi::{CString, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::Path;
@@ -11,6 +11,7 @@ use winapi::shared::winerror::{HRESULT_CODE, SUCCEEDED};
 use winapi::um::ioapiset::DeviceIoControl;
 use winapi::um::winioctl::{FSCTL_DELETE_EXTERNAL_BACKING, FSCTL_SET_EXTERNAL_BACKING};
 use winapi::um::winnt::{HANDLE, HRESULT, LPCWSTR};
+use winapi::um::winver::{GetFileVersionInfoA, GetFileVersionInfoSizeA, VerQueryValueA};
 use winapi::STRUCT;
 
 type P_WOF_FILE_COMPRESSION_INFO_V1 = *mut _WOF_FILE_COMPRESSION_INFO_V1;
@@ -20,6 +21,27 @@ STRUCT! {
         Flags: ULONG,
     }
 }
+
+type P_VS_FIXEDFILEINFO = *mut VS_FIXEDFILEINFO;
+STRUCT! {
+    struct VS_FIXEDFILEINFO {
+        dwSignature: DWORD,
+        dwStrucVersion: DWORD,
+        dwFileVersionMS: DWORD,
+        dwFileVersionLS: DWORD,
+        dwProductVersionMS: DWORD,
+        dwProductVersionLS: DWORD,
+        dwFileFlagsMask: DWORD,
+        dwFileFlags: DWORD,
+        dwFileOS: DWORD,
+        dwFileType: DWORD,
+        dwFileSubtype: DWORD,
+        dwFileDateMS: DWORD,
+        dwFileDateLS: DWORD,
+    }
+}
+
+const VS_FIXEDFILEINFO_SIGNATURE: DWORD = 0xFEEF_04BD;
 
 const FILE_PROVIDER_COMPRESSION_XPRESS4K: ULONG = 0;
 const FILE_PROVIDER_COMPRESSION_LZX: ULONG = 1;
@@ -90,7 +112,58 @@ impl Compression {
 pub struct Compact;
 
 impl Compact {
-    pub fn is_compression_supported<P: AsRef<Path>>(path: P) -> std::io::Result<bool> {
+    pub fn system_supports_compression() -> std::io::Result<bool> {
+        let dll = CString::new("WofUtil.dll").unwrap();
+        let path = CString::new("\\").unwrap();
+        let mut handle = 0;
+
+        let len = unsafe { GetFileVersionInfoSizeA(dll.as_ptr(), &mut handle) };
+
+        if len == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+
+        let mut buf = vec![0u8; len as usize];
+
+        let ret = unsafe {
+            GetFileVersionInfoA(
+                dll.as_ptr(),
+                handle,
+                len,
+                buf.as_mut_ptr() as *mut _ as PVOID,
+            )
+        };
+
+        if ret == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+
+        let mut pinfo: PVOID = std::ptr::null_mut();
+        let mut pinfo_size = 0;
+
+        let ret = unsafe {
+            VerQueryValueA(
+                buf.as_mut_ptr() as *mut _ as PVOID,
+                path.as_ptr(),
+                &mut pinfo,
+                &mut pinfo_size,
+            )
+        };
+
+        if ret == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+
+        assert!(pinfo_size as usize >= std::mem::size_of::<VS_FIXEDFILEINFO>());
+        assert!(!pinfo.is_null());
+
+        let pinfo: &VS_FIXEDFILEINFO = unsafe { &*(pinfo as *const VS_FIXEDFILEINFO) };
+        assert!(pinfo.dwSignature == VS_FIXEDFILEINFO_SIGNATURE);
+
+        Ok((pinfo.dwFileVersionMS >> 16) & 0xffff >= 10)
+    }
+
+    pub fn file_supports_compression<P: AsRef<Path>>(path: P) -> std::io::Result<bool> {
         let file = std::fs::File::open(path)?;
         let mut version: ULONG = 0;
 
