@@ -32,6 +32,7 @@ impl Default for Settings {
                 "*.gz",
                 "*.jpeg",
                 "*.jpg",
+                "*.log",
                 "*.lz4",
                 "*.lzma",
                 "*.lzx",

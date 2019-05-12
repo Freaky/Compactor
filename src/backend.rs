@@ -284,9 +284,8 @@ impl<T> Backend<T> {
         let new_size = folder.physical_size;
 
         let msg = format!(
-            "Compacted {}/{} files saving {} in {:.2?}",
+            "Compacted {} files saving {} in {:.2?}",
             done,
-            total,
             format_size(old_size - new_size),
             start.elapsed()
         );

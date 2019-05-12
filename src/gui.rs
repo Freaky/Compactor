@@ -56,10 +56,6 @@ pub enum GuiResponse {
         date: String,
         version: String,
     },
-    SettingsSaved,
-    SettingsError {
-        msg: String,
-    },
     SettingsReset {
         compression: String,
         excludes: String,
@@ -147,23 +143,6 @@ impl<T> GuiWrapper<T> {
     pub fn compacting(&self) {
         self.send(&GuiResponse::Compacting);
     }
-
-    /*
-    pub fn settings_saved(&self) {
-        self.send(&GuiResponse::SettingsSaved);
-    }
-
-    pub fn settings_error<S: AsRef<str>>(&self, error: S) {
-        self.send(&GuiResponse::SettingsError { msg: error.as_ref().to_owned() });
-    }
-
-    pub fn settings_reset(&self, s: &Settings) {
-        self.send(&GuiResponse::SettingsReset {
-            compression: s.compression.to_string(),
-            excludes: s.excludes.join("\n")
-        });
-    }
-    */
 
     pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
         let (tx, rx) = bounded::<WVResult<Option<PathBuf>>>(1);

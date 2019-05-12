@@ -212,7 +212,9 @@ impl Background for FolderScan {
                 }
             }
 
-            if fi.logical_size <= 4096
+            if fi.physical_size < fi.logical_size {
+                ds.push(FileKind::Compressed, fi);
+            } else if fi.logical_size <= 4096
                 || metadata.file_attributes()
                     & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY)
                     != 0
@@ -220,8 +222,6 @@ impl Background for FolderScan {
                 || excludes.is_match(entry.path())
             {
                 ds.push(FileKind::Skipped, fi);
-            } else if fi.physical_size < fi.logical_size {
-                ds.push(FileKind::Compressed, fi);
             } else {
                 ds.push(FileKind::Compressible, fi);
             }
