@@ -232,6 +232,10 @@ impl<T> Backend<T> {
                             }
                         }
 
+                        if last_update.elapsed() > Duration::from_millis(50) {
+                            self.gui.summary(folder.summary());
+                        }
+
                         break;
                     }
 
