@@ -8,10 +8,11 @@ use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
 use crate::background::BackgroundHandle;
 use crate::compact::Compression;
 use crate::compression::BackgroundCompactor;
+use crate::compresstinate::compresstinate;
+use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
 use crate::settings::Settings;
-use crate::filesdb::FilesDb;
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
@@ -125,7 +126,8 @@ impl<T> Backend<T> {
                 }
                 None => {
                     if let Some(status) = task.status() {
-                        self.gui.status(format!("Scanning: {}", status.0.display()), None);
+                        self.gui
+                            .status(format!("Scanning: {}", status.0.display()), None);
                         self.gui.summary(status.1);
                     }
                 }
@@ -194,13 +196,20 @@ impl<T> Backend<T> {
             let mut displayed = false;
 
             if let Some(mut fi) = folder.pop(FileKind::Compressible) {
-                send_file
-                    .send(Some(folder.path.join(&fi.path)))
-                    .expect("send_file");
+                let fullpath = folder.path.join(&fi.path);
+                if fi.physical_size > 1024 * 1024 * 128
+                    && compresstinate(&fullpath).unwrap_or(1.0) > 0.9
+                {
+                    incompressible.insert(fullpath);
+                    continue;
+                }
+                send_file.send(Some(fullpath)).expect("send_file");
 
                 if !displayed && last_update.elapsed() > Duration::from_millis(50) {
-                    self.gui
-                        .status(format!("Compacting: {}", fi.path.display()), Some(done as f32 / total as f32));
+                    self.gui.status(
+                        format!("Compacting: {}", fi.path.display()),
+                        Some(done as f32 / total as f32),
+                    );
                     last_update = Instant::now();
                     displayed = true;
 

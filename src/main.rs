@@ -1,10 +1,11 @@
 #![windows_subsystem = "windows"]
 
-mod filesdb;
 mod backend;
 mod background;
 mod compact;
 mod compression;
+mod compresstinate;
+mod filesdb;
 mod folder;
 mod gui;
 mod settings;
