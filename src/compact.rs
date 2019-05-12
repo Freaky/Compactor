@@ -274,7 +274,7 @@ impl Compact {
     }
 }
 
-#[link(name = "wofutil")]
+#[link(name = "WofUtil")]
 extern "system" {
     pub fn WofGetDriverVersion(
         file_or_volume_handle: HANDLE,
