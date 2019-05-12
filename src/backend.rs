@@ -207,8 +207,6 @@ impl<T> Backend<T> {
                     );
                     last_update = Instant::now();
                     displayed = true;
-
-                    self.gui.summary(folder.summary());
                 }
 
                 loop {
@@ -243,8 +241,6 @@ impl<T> Backend<T> {
                             Some(done as f32 / total as f32),
                         );
 
-                        self.gui.summary(folder.summary());
-                        last_update = Instant::now();
                         displayed = true;
                     }
 
