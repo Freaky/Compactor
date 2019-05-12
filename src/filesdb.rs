@@ -1,11 +1,10 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard};
 
 use lazy_static::lazy_static;
 
 lazy_static! {
-    // static ref DB: Arc<Mutex<HashSet<PathBuf>>> = Arc::new(Mutex::new(HashSet<PathBuf>::new()));
     static ref DB: Mutex<HashSet<PathBuf>> = Mutex::new(HashSet::<PathBuf>::new());
 }
 

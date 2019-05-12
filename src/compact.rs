@@ -302,9 +302,9 @@ extern "system" {
 fn compact_works_i_guess() {
     let path = std::path::PathBuf::from("Cargo.lock");
 
-    let supported = Compact::is_compression_supported(&path).expect("is_compression_supported");
+    let supported = Compact::system_supports_compression().expect("system_supports_compression");
 
-    if supported {
+    if supported && Compact::file_supports_compression(&path).expect("is_compression_supported") {
         Compact::uncompress_file(&path).expect("uncompress_file");
         assert_eq!(
             None,

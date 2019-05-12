@@ -155,8 +155,6 @@ impl<T> GuiWrapper<T> {
     }
 }
 
-pub fn is_supported_os() {}
-
 pub fn spawn_gui() {
     let signalled = Arc::new(AtomicBool::new(false));
     let r = signalled.clone();
