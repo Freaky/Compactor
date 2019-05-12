@@ -66,11 +66,6 @@ pub fn compresstinate<P: AsRef<Path>>(path: P) -> io::Result<f32> {
     let samples = sample_size(blocks, 15, Confidence::C90) as u64;
     let step = 4096 * (blocks / samples);
 
-    eprintln!(
-        "file has {} blocks, need {} samples, {} step",
-        blocks, samples, step
-    );
-
     let mut buf = [0; 4096];
 
     for i in 0..samples {

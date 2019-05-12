@@ -97,7 +97,7 @@ impl<T> GuiWrapper<T> {
         );
         self.0
             .dispatch(move |wv| {
-                println!("Eval: {}", js);
+                // println!("Eval: {}", js);
                 wv.eval(&js)
             })
             .ok(); // let errors bubble through via messages

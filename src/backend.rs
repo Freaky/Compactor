@@ -197,10 +197,18 @@ impl<T> Backend<T> {
 
             if let Some(mut fi) = folder.pop(FileKind::Compressible) {
                 let fullpath = folder.path.join(&fi.path);
-                if fi.physical_size > 1024 * 1024 * 128
-                    && compresstinate(&fullpath).unwrap_or(1.0) > 0.9
+                // XXX: scale ratio to size
+                if compresstinate(&fullpath).unwrap() > 0.95
                 {
+                    if last_update.elapsed() > Duration::from_millis(50) {
+                        self.gui.status(
+                            format!("Skipping: {}", fi.path.display()),
+                            Some(done as f32 / total as f32),
+                        );
+                    }
                     incompressible.insert(fullpath);
+                    folder.push(FileKind::Skipped, fi);
+                    done += 1;
                     continue;
                 }
                 send_file.send(Some(fullpath)).expect("send_file");
