@@ -93,7 +93,6 @@ impl<T> GuiWrapper<T> {
         );
         self.0
             .dispatch(move |wv| {
-                // println!("Eval: {}", js);
                 wv.eval(&js)
             })
             .ok(); // let errors bubble through via messages
@@ -203,7 +202,6 @@ pub fn spawn_gui() {
 
                     if let Err(msg) = s.globset() {
                         webview.dialog().error("Settings Error", msg).ok();
-                    // message_dispatch(&mut webview, &GuiResponse::SettingsError { msg });
                     } else {
                         webview
                             .dialog()
@@ -290,9 +288,7 @@ pub fn spawn_gui() {
         }
     }
 
-    eprintln!("Waiting for background worker to finish");
     bg.join().expect("background thread");
-    eprintln!("Exiting");
 }
 
 fn message_dispatch<T>(wv: &mut web_view::WebView<'_, T>, msg: &GuiResponse) {
@@ -301,7 +297,6 @@ fn message_dispatch<T>(wv: &mut web_view::WebView<'_, T>, msg: &GuiResponse) {
         serde_json::to_string(msg).expect("serialize")
     );
 
-    println!("Eval: {}", js);
     wv.eval(&js).ok();
 }
 
@@ -311,7 +306,6 @@ fn open_url<U: AsRef<str>>(url: U) {
 
 fn set_dpi_aware() {
     use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE};
-    dbg!(PROCESS_SYSTEM_DPI_AWARE);
 
     unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) };
 }
