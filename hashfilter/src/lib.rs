@@ -12,6 +12,7 @@ use siphasher::sip128::{Hasher128, SipHasher};
 #[derive(Debug)]
 pub struct HashFilter {
     path: PathBuf,
+    last_offset: u64,
     filter: HashSet<u128>,
     pending: Vec<u128>,
 }
@@ -20,14 +21,18 @@ impl HashFilter {
     pub fn open<P: AsRef<Path>>(path: P) -> Self {
         Self {
             path: path.as_ref().to_owned(),
+            last_offset: 0,
             filter: HashSet::new(),
             pending: vec![]
         }
     }
 
     pub fn load(&mut self) -> io::Result<()> {
-        let file = File::open(&self.path)?;
+        let mut file = File::open(&self.path)?;
         file.lock_shared()?;
+        if self.last_offset > 0 {
+            file.seek(SeekFrom::Start(self.last_offset))?;
+        }
         let mut file = BufReader::new(file);
         let mut buf = [0; 16];
         loop {
@@ -36,6 +41,8 @@ impl HashFilter {
                 Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(()),
                 Err(e) => return Err(e)
             };
+
+            self.last_offset += 16;
         }
     }
 
@@ -60,6 +67,10 @@ impl HashFilter {
 
         while let Some(key) = self.pending.pop() {
             file.write_all(&key.to_le_bytes())?;
+        }
+
+        if end == self.last_offset {
+            self.last_offset = file.seek(SeekFrom::End(0))?;
         }
 
         file.into_inner()?.sync_all()?;
@@ -116,10 +127,15 @@ fn it_seems_to_work() {
 
     hf.save().unwrap();
 
-    let mut hf = HashFilter::open(&db);
-    hf.load().unwrap();
+    let mut hf2 = HashFilter::open(&db);
+    hf2.load().unwrap();
+    hf2.insert(PathBuf::from("/path/to/some/file10"));
+    hf2.save().unwrap();
 
     for p in &paths {
-        assert!(hf.contains(p));
+        assert!(hf2.contains(p));
     }
+
+    hf.load().unwrap();
+    assert!(hf.contains(PathBuf::from("/path/to/some/file10")));
 }
