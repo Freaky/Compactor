@@ -1,8 +1,7 @@
-
 use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::hash::Hash;
-use std::io::{self, Read, Write, Seek, SeekFrom, BufReader, BufWriter};
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -23,7 +22,7 @@ impl HashFilter {
             path: path.as_ref().to_owned(),
             last_offset: 0,
             filter: HashSet::new(),
-            pending: vec![]
+            pending: vec![],
         }
     }
 
@@ -39,7 +38,7 @@ impl HashFilter {
             match file.read_exact(&mut buf) {
                 Ok(()) => self.filter.insert(u128::from_le_bytes(buf)),
                 Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(()),
-                Err(e) => return Err(e)
+                Err(e) => return Err(e),
             };
 
             self.last_offset += 16;
