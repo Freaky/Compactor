@@ -1,0 +1,125 @@
+
+use std::collections::HashSet;
+use std::fs::{File, OpenOptions};
+use std::hash::Hash;
+use std::io::{self, Read, Write, Seek, SeekFrom, BufReader, BufWriter};
+use std::path::Path;
+use std::path::PathBuf;
+
+use fs2::FileExt;
+use siphasher::sip128::{Hasher128, SipHasher};
+
+#[derive(Debug)]
+pub struct HashFilter {
+    path: PathBuf,
+    filter: HashSet<u128>,
+    pending: Vec<u128>,
+}
+
+impl HashFilter {
+    pub fn open<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            path: path.as_ref().to_owned(),
+            filter: HashSet::new(),
+            pending: vec![]
+        }
+    }
+
+    pub fn load(&mut self) -> io::Result<()> {
+        let file = File::open(&self.path)?;
+        file.lock_shared()?;
+        let mut file = BufReader::new(file);
+        let mut buf = [0; 16];
+        loop {
+            match file.read_exact(&mut buf) {
+                Ok(()) => self.filter.insert(u128::from_le_bytes(buf)),
+                Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(()),
+                Err(e) => return Err(e)
+            };
+        }
+    }
+
+    pub fn save(&mut self) -> io::Result<()> {
+        if self.pending.is_empty() {
+            return Ok(());
+        }
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(&self.path)?;
+        file.lock_exclusive()?;
+
+        let end = file.metadata()?.len();
+        if end % 16 != 0 {
+            file.set_len(end - (end % 16))?;
+        }
+        file.seek(SeekFrom::End(0))?;
+
+        let mut file = BufWriter::new(file);
+
+        while let Some(key) = self.pending.pop() {
+            file.write_all(&key.to_le_bytes())?;
+        }
+
+        file.into_inner()?.sync_all()?;
+
+        Ok(())
+    }
+
+    pub fn insert<H: Hash>(&mut self, data: H) -> bool {
+        let key = Self::key_for(data);
+
+        if self.filter.insert(key) {
+            self.pending.push(key);
+            return true;
+        }
+
+        false
+    }
+
+    pub fn contains<H: Hash>(&self, data: H) -> bool {
+        self.filter.contains(&Self::key_for(data))
+    }
+
+    fn key_for<H: Hash>(data: H) -> u128 {
+        let mut hash = SipHasher::new();
+        data.hash(&mut hash);
+        let h = hash.finish128();
+        (u128::from(h.h1) << 64) | u128::from(h.h2)
+    }
+}
+
+#[test]
+fn it_seems_to_work() {
+    let dir = tempdir::TempDir::new("hashfilter-test").unwrap();
+    let db = dir.path().join("test.dat");
+    let mut hf = HashFilter::open(&db);
+    let _ = hf.load();
+
+    let paths = vec![
+        PathBuf::from("/path/to/some/file0"),
+        PathBuf::from("/path/to/some/file1"),
+        PathBuf::from("/path/to/some/file2"),
+        PathBuf::from("/path/to/some/file3"),
+        PathBuf::from("/path/to/some/file4"),
+        PathBuf::from("/path/to/some/file5"),
+        PathBuf::from("/path/to/some/file6"),
+        PathBuf::from("/path/to/some/file7"),
+        PathBuf::from("/path/to/some/file8"),
+        PathBuf::from("/path/to/some/file9"),
+    ];
+
+    for p in &paths {
+        hf.insert(p);
+    }
+
+    hf.save().unwrap();
+
+    let mut hf = HashFilter::open(&db);
+    hf.load().unwrap();
+
+    for p in &paths {
+        assert!(hf.contains(p));
+    }
+}
