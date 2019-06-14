@@ -217,7 +217,14 @@ impl<T> Backend<T> {
                             Ok(true) => {
                                 fi.physical_size =
                                     filesize::file_real_size(&path).unwrap_or(fi.physical_size);
-                                folder.push(FileKind::Compressed, fi);
+
+                                // Irritatingly Windows can return success when it fails.
+                                if fi.physical_size == fi.logical_size {
+                                    incompressible.insert(path);
+                                    folder.push(FileKind::Skipped, fi);
+                                } else {
+                                    folder.push(FileKind::Compressed, fi);
+                                }
                             }
                             Ok(false) => {
                                 incompressible.insert(path);
