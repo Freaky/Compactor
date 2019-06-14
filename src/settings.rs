@@ -1,11 +1,12 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use lazy_static::lazy_static;
+use serde_derive::{Serialize, Deserialize};
 
 use crate::compact::Compression;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub compression: Compression,
     pub excludes: Vec<String>,
@@ -56,7 +57,6 @@ impl Default for Settings {
                 "*.xnb",
                 "*.xlsx",
                 "*.xz",
-                "*.zip",
                 "*.zst",
                 "*.zstd",
                 "*.{bik,bk2,bnk,pc_binkvid}",
@@ -69,7 +69,7 @@ impl Default for Settings {
 }
 
 lazy_static! {
-    static ref SETTINGS: Arc<Mutex<Settings>> = Arc::new(Mutex::new(Settings::default()));
+    static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
 }
 
 impl Settings {
