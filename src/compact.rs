@@ -5,6 +5,8 @@ use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::Path;
 
+use serde_derive::{Serialize, Deserialize};
+
 use winapi::shared::minwindef::{BOOL, DWORD, PBOOL, PULONG, ULONG};
 use winapi::shared::ntdef::PVOID;
 use winapi::shared::winerror::{HRESULT_CODE, SUCCEEDED};
@@ -14,13 +16,30 @@ use winapi::um::winnt::{HANDLE, HRESULT, LPCWSTR};
 use winapi::um::winver::{GetFileVersionInfoA, GetFileVersionInfoSizeA, VerQueryValueA};
 use winapi::STRUCT;
 
-type P_WOF_FILE_COMPRESSION_INFO_V1 = *mut _WOF_FILE_COMPRESSION_INFO_V1;
 STRUCT! {
     struct _WOF_FILE_COMPRESSION_INFO_V1 {
         Algorithm: ULONG,
         Flags: ULONG,
     }
 }
+
+STRUCT! {
+    struct _WOF_EXTERNAL_INFO {
+        Version: ULONG,
+        Provider: ULONG,
+    }
+}
+
+STRUCT! {
+    struct _FILE_PROVIDER_EXTERNAL_INFO_V1 {
+        Version: ULONG,
+        Algorithm: ULONG,
+        Flags: ULONG,
+    }
+}
+
+#[repr(C)]
+struct SetFileCompression(_WOF_EXTERNAL_INFO, _FILE_PROVIDER_EXTERNAL_INFO_V1);
 
 type P_VS_FIXEDFILEINFO = *mut VS_FIXEDFILEINFO;
 STRUCT! {
@@ -51,9 +70,49 @@ const FILE_PROVIDER_COMPRESSION_XPRESS16K: ULONG = 3;
 const ERROR_SUCCESS: HRESULT = 0;
 const ERROR_COMPRESSION_NOT_BENEFICIAL: HRESULT = 344;
 
+const FILE_PROVIDER_CURRENT_VERSION: ULONG = 1;
+const WOF_CURRENT_VERSION: ULONG = 1;
 const WOF_PROVIDER_FILE: ULONG = 2;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+impl Default for _FILE_PROVIDER_EXTERNAL_INFO_V1 {
+    fn default() -> Self {
+        Self {
+            Version: FILE_PROVIDER_CURRENT_VERSION,
+            Algorithm: FILE_PROVIDER_COMPRESSION_XPRESS4K,
+            Flags: 0,
+        }
+    }
+}
+
+impl Default for _WOF_EXTERNAL_INFO {
+    fn default() -> Self {
+        Self {
+            Version: WOF_CURRENT_VERSION,
+            Provider: WOF_PROVIDER_FILE,
+        }
+    }
+}
+
+impl _FILE_PROVIDER_EXTERNAL_INFO_V1 {
+    fn new(compression: Compression) -> Self {
+        Self {
+            Version: FILE_PROVIDER_CURRENT_VERSION,
+            Algorithm: compression.to_api(),
+            Flags: 0,
+        }
+    }
+}
+
+impl SetFileCompression {
+    fn new(compression: Compression) -> Self {
+        Self(
+            _WOF_EXTERNAL_INFO::default(),
+            _FILE_PROVIDER_EXTERNAL_INFO_V1::new(compression)
+        )
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Compression {
     Xpress4k,
     Xpress8k,
@@ -218,23 +277,24 @@ impl Compact {
     ) -> std::io::Result<bool> {
         let file = std::fs::File::open(path)?;
 
-        // DeviceIoControl can do this too, but it's a bit more fiddly
-        // needs two structs instead of one, concatenated together in a buffer
-        let info = _WOF_FILE_COMPRESSION_INFO_V1 {
-            Algorithm: compression.to_api(),
-            Flags: 0,
-        };
-        let len: ULONG = std::mem::size_of::<_WOF_FILE_COMPRESSION_INFO_V1>() as ULONG;
+        let mut data = SetFileCompression::new(compression);
+        let len = std::mem::size_of::<SetFileCompression>();
+        let mut bytes_returned: DWORD = 0;
 
         let ret = unsafe {
-            WofSetFileDataLocation(
+            DeviceIoControl(
                 file.as_raw_handle() as HANDLE,
-                WOF_PROVIDER_FILE,
-                &info as *const _ as PVOID,
-                len,
+                FSCTL_SET_EXTERNAL_BACKING,
+                &mut data as *mut _ as PVOID,
+                len as DWORD,
+                std::ptr::null_mut(),
+                0,
+                &mut bytes_returned,
+                std::ptr::null_mut(),
             )
         };
 
+        // BOOL my arse
         if SUCCEEDED(ret) {
             Ok(true)
         } else {
@@ -290,6 +350,7 @@ extern "system" {
         length: PULONG,
     ) -> HRESULT;
 
+    // This is a slightly simpler way of setting file backing.
     pub fn WofSetFileDataLocation(
         file_handle: HANDLE,
         provider: ULONG,
