@@ -1,4 +1,6 @@
-use std::sync::Mutex;
+use std::path::PathBuf;
+use std::path::Path;
+use std::sync::{Mutex};
 
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use lazy_static::lazy_static;
@@ -6,15 +8,23 @@ use serde_derive::{Serialize, Deserialize};
 
 use crate::compact::Compression;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default)]
 pub struct Settings {
+    backing: Option<PathBuf>,
+    config: Config,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub decimal: bool,
     pub compression: Compression,
     pub excludes: Vec<String>,
 }
 
-impl Default for Settings {
+impl Default for Config {
     fn default() -> Self {
         Self {
+            decimal: false,
             compression: Compression::default(),
             excludes: vec![
                 "*:\\Windows\\*",
@@ -68,19 +78,42 @@ impl Default for Settings {
     }
 }
 
-lazy_static! {
-    static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
+impl Settings {
+    pub fn set_backing<P: AsRef<Path>>(&mut self, p: P) {
+        self.backing = Some(p.as_ref().to_owned());
+    }
+
+    pub fn load(&mut self) {
+        if self.backing.is_none() {
+            return;
+        }
+
+        if let Ok(data) = std::fs::read(self.backing.as_ref().unwrap()) {
+            if let Ok(c) = serde_json::from_slice::<Config>(&data) {
+                self.set(c);
+            }
+        }
+    }
+
+    pub fn save(&mut self) {
+        if self.backing.is_none() {
+            return;
+        }
+
+        let data = serde_json::to_string_pretty(&self.config).expect("Serialize");
+        let _ = std::fs::write(self.backing.as_ref().unwrap(), &data);
+    }
+
+    pub fn set(&mut self, c: Config) {
+        self.config = c;
+    }
+
+    pub fn get(&self) -> Config {
+        self.config.clone()
+    }
 }
 
-impl Settings {
-    pub fn get() -> Settings {
-        SETTINGS.lock().expect("Settings").clone()
-    }
-
-    pub fn set(s: Settings) {
-        *SETTINGS.lock().expect("Settings") = s;
-    }
-
+impl Config {
     pub fn globset(&self) -> Result<GlobSet, String> {
         let mut globs = GlobSetBuilder::new();
         for glob in &self.excludes {
@@ -88,8 +121,28 @@ impl Settings {
         }
         globs.build().map_err(|e| e.to_string())
     }
+}
 
-    // fn validate(&self) -> Result<(), String> {}
+lazy_static! {
+    static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
+}
+
+pub fn get() -> Config {
+    SETTINGS.lock().expect("Settings").get()
+}
+
+pub fn set(s: Config) {
+    SETTINGS.lock().expect("Settings").set(s);
+}
+
+pub fn load<P: AsRef<Path>>(p: P) {
+    let mut s = SETTINGS.lock().unwrap();
+    s.set_backing(p);
+    s.load();
+}
+
+pub fn save() {
+    SETTINGS.lock().unwrap().save();
 }
 
 #[test]

@@ -18,7 +18,8 @@ use winapi::um::winnt;
 use crate::backend::Backend;
 use crate::compact::{Compact, Compression};
 use crate::folder::FolderSummary;
-use crate::settings::Settings;
+use crate::settings::{self, Config};
+use crate::persistence;
 
 const HTML_HEAD: &str = include_str!("ui/head.html");
 const HTML_CSS: &str = include_str!("ui/style.css");
@@ -34,6 +35,7 @@ pub enum GuiRequest {
         url: String,
     },
     SaveSettings {
+        decimal: bool,
         compression: String,
         excludes: String,
     },
@@ -57,6 +59,7 @@ pub enum GuiResponse {
         version: String,
     },
     SettingsReset {
+        decimal: bool,
         compression: String,
         excludes: String,
     },
@@ -189,13 +192,15 @@ pub fn spawn_gui() {
                     open_url(url);
                 }
                 Ok(GuiRequest::SaveSettings {
+                    decimal,
                     compression,
                     excludes,
                 }) => {
                     let c = Compression::from_str(compression).expect("Compression");
                     let globs = excludes.split('\n').map(str::to_owned).collect();
 
-                    let s = Settings {
+                    let s = Config {
+                        decimal,
                         compression: c,
                         excludes: globs,
                     };
@@ -207,23 +212,26 @@ pub fn spawn_gui() {
                             .dialog()
                             .info(
                                 "Settings Saved",
-                                "Settings Updated (but not yet saved to disk)",
+                                "Settings Updated",
                             )
                             .ok();
-                        Settings::set(s);
+                        settings::set(s);
+                        settings::save();
                     }
                 }
                 Ok(GuiRequest::ResetSettings) => {
-                    let s = Settings::default();
+                    let s = Config::default();
 
                     message_dispatch(
                         &mut webview,
                         &GuiResponse::SettingsReset {
+                            decimal: s.decimal,
                             compression: s.compression.to_string(),
                             excludes: s.excludes.join("\n"),
                         },
                     );
-                    Settings::set(s);
+                    settings::set(s);
+                    settings::save();
                 }
                 Ok(msg) => {
                     from_gui.send(msg).expect("GUI message queue");
@@ -238,17 +246,18 @@ pub fn spawn_gui() {
         .build()
         .expect("WebView");
 
-    // TODO: loading
-    let s = Settings::default();
+    persistence::load();
+    let s = settings::get();
 
     message_dispatch(
         &mut webview,
         &GuiResponse::SettingsReset {
+            decimal: s.decimal,
             compression: s.compression.to_string(),
             excludes: s.excludes.join("\n"),
         },
     );
-    Settings::set(s);
+    // Config::set(s);
 
     if !Compact::system_supports_compression().unwrap_or_default() {
         webview

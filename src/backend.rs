@@ -11,7 +11,7 @@ use crate::compression::BackgroundCompactor;
 use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
-use crate::settings::Settings;
+use crate::settings::{self, Settings};
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
@@ -74,7 +74,7 @@ impl<T> Backend<T> {
     }
 
     fn scan_loop(&mut self, path: PathBuf) {
-        let settings = Settings::get();
+        let settings = settings::get();
 
         let scanner = FolderScan::new(path, settings.globset().expect("globs"));
         let task = BackgroundHandle::spawn(scanner);
@@ -155,6 +155,7 @@ impl<T> Backend<T> {
         let old_size = folder.physical_size;
 
         let mut incompressible = FilesDb::borrow();
+        let _ = incompressible.load();
 
         self.gui.compacting();
 
@@ -287,6 +288,8 @@ impl<T> Backend<T> {
 
         send_file.send(None).expect("send_file");
         task.wait();
+
+        let _ = incompressible.save();
 
         let new_size = folder.physical_size;
 
@@ -441,9 +444,8 @@ impl<T> Backend<T> {
         let new_size = folder.physical_size;
 
         let msg = format!(
-            "Expanded {}/{} files wasting {} in {:.2?}",
+            "Expanded {} files wasting {} in {:.2?}",
             done,
-            total,
             format_size(new_size - old_size),
             start.elapsed()
         );

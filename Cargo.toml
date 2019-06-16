@@ -1,6 +1,6 @@
 [package]
 name = "compactor"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Thomas Hurst <tom@hur.st>"]
 description = "An interface to Windows 10 filesystem compression"
 edition = "2018"
@@ -22,7 +22,27 @@ ctrlc = "3.0"
 humansize = "1.1.0"
 globset = "0.4"
 lz4 = "1.23.1"
+fs2 = "0.4.3"
+siphasher = "0.3.0"
+hashfilter = { path = "hashfilter" }
+app_dirs = "1.2.1"
+
+[[bin]]
+name = "Compactor"
+path = "src/main.rs"
 
 [build-dependencies]
 vergen = "3"
 winres = "0.1"
+
+[profile.release]
+opt-level = "s"
+debug = true
+
+[dev-dependencies]
+tempdir = "0.3.7"
+
+[workspace]
+members = [
+  "hashfilter"
+]

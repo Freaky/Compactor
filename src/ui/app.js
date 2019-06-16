@@ -59,7 +59,18 @@ var Util = (function() {
 			return number.toLocaleString("en", {minimumFractionDigits: digits, maximumFractionDigits: digits});
 		},
 
-		bytes_to_human: function(bytes) {
+		bytes_to_human_dec: function(bytes) {
+			for (var i = powers.length - 1; i > 0; i--) {
+				var div = Math.pow(10, 3 * i);
+				if (bytes >= div) {
+					return Util.format_number(bytes / div, 2) + " " + powers[i] + 'B';
+				}
+			}
+
+			return Util.format_number(bytes, 0) + ' B';
+		},
+
+		bytes_to_human_bin: function(bytes) {
 			for (var i = powers.length - 1; i > 0; i--) {
 				var div = Math.pow(2, 10*i);
 				if (bytes >= div) {
@@ -125,6 +136,8 @@ var Util = (function() {
 	};
 })();
 
+Util.bytes_to_human = Util.bytes_to_human_bin;
+
 // Actions call back into Rust
 var Action = (function() {
 	return {
@@ -136,8 +149,9 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'ResetSettings' }));
 		},
 
-		save_settings: function(compression, excludes) {
-			external.invoke(JSON.stringify({ type: 'SaveSettings', compression: compression, excludes: excludes }));
+		save_settings: function(settings) {
+			settings.type = 'SaveSettings';
+			external.invoke(JSON.stringify(settings));
 		},
 
 		choose_folder: function() {
@@ -180,6 +194,7 @@ var Response = (function() {
 		dispatch: function(msg) {
 			switch(msg.type) {
 				case "SettingsReset":
+					Gui.set_decimal(msg.decimal);
 					Gui.set_compression(msg.compression);
 					Gui.set_excludes(msg.excludes);
 					break;
@@ -223,12 +238,16 @@ var Gui = (function() {
 			});
 
 			$("#Button_Save").on("click", function() {
-				Action.save_settings($("#Compression_Mode").val(), $("#Excludes").val());
+				Action.save_settings({
+				  decimal: $("#SI_Units").val() == "D",
+					compression: $("#Compression_Mode").val(),
+					excludes: $("#Excludes").val()
+				});
 			});
 
 			$("#Button_Reset").on("click", function() {
 				Action.reset_settings();
-			})
+			});
 		},
 
 		page: function(page) {
@@ -241,6 +260,17 @@ var Gui = (function() {
 		version: function(date, version) {
 			$(".compile-date").text(date);
 			$(".version").text(version);
+		},
+
+		set_decimal: function(dec) {
+			var field = $("#SI_Units");
+			if (dec) {
+				field.val("D");
+				Util.bytes_to_human = Util.bytes_to_human_dec;
+			} else {
+				field.val("I");
+				Util.bytes_to_human = Util.bytes_to_human_bin;
+			}
 		},
 
 		set_compression: function(compression) {
