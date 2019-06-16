@@ -8,9 +8,9 @@ use std::path::PathBuf;
 use fs2::FileExt;
 use siphasher::sip128::{Hasher128, SipHasher};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct HashFilter {
-    path: PathBuf,
+    path: Option<PathBuf>,
     last_offset: u64,
     filter: HashSet<u128>,
     pending: Vec<u128>,
@@ -19,19 +19,32 @@ pub struct HashFilter {
 impl HashFilter {
     pub fn open<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            path: path.as_ref().to_owned(),
-            last_offset: 0,
-            filter: HashSet::new(),
-            pending: vec![],
+            path: Some(path.as_ref().to_owned()),
+            .. Self::default()
         }
     }
 
+    pub fn set_backing<P: AsRef<Path>>(&mut self, path: P) {
+        self.path = Some(path.as_ref().to_owned());
+        self.last_offset = 0;
+    }
+
     pub fn load(&mut self) -> io::Result<()> {
-        let mut file = File::open(&self.path)?;
+        if self.path.is_none() {
+            return Ok(());
+        }
+
+        let mut file = match File::open(self.path.as_ref().unwrap()) {
+            Ok(file) => file,
+            Err(ref e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
+            Err(e) => return Err(e),
+        };
         file.lock_shared()?;
+
         if self.last_offset > 0 {
             file.seek(SeekFrom::Start(self.last_offset))?;
         }
+
         let mut file = BufReader::new(file);
         let mut buf = [0; 16];
         loop {
@@ -46,14 +59,14 @@ impl HashFilter {
     }
 
     pub fn save(&mut self) -> io::Result<()> {
-        if self.pending.is_empty() {
+        if self.path.is_none() || self.pending.is_empty() {
             return Ok(());
         }
 
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)
-            .open(&self.path)?;
+            .open(self.path.as_ref().unwrap())?;
         file.lock_exclusive()?;
 
         let end = file.metadata()?.len();
