@@ -149,6 +149,7 @@ impl<T> Backend<T> {
         let mut done = 0;
 
         let mut last_update = Instant::now();
+        let mut last_write = Instant::now();
         let mut paused = false;
         let mut stopped = false;
 
@@ -192,6 +193,11 @@ impl<T> Backend<T> {
 
             if stopped {
                 break;
+            }
+
+            if last_write.elapsed() > Duration::from_secs(60) {
+                let _ = incompressible.save();
+                last_write = Instant::now();
             }
 
             let mut displayed = false;

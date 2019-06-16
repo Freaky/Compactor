@@ -208,6 +208,14 @@ pub fn spawn_gui() {
                     if let Err(msg) = s.globset() {
                         webview.dialog().error("Settings Error", msg).ok();
                     } else {
+                        message_dispatch(
+                            &mut webview,
+                            &GuiResponse::SettingsReset {
+                                decimal: s.decimal,
+                                compression: s.compression.to_string(),
+                                excludes: s.excludes.join("\n"),
+                            },
+                        );
                         webview
                             .dialog()
                             .info(

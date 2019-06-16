@@ -175,7 +175,8 @@ impl Background for FolderScan {
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
         let mut ds = FolderInfo::new(&self.path);
         let excludes = self.excludes.lock().expect("exclude lock");
-        let incompressible = FilesDb::borrow();
+        let mut incompressible = FilesDb::borrow();
+        let _ = incompressible.load();
 
         let mut last_status = Instant::now();
 
