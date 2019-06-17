@@ -379,10 +379,8 @@ var Gui = (function() {
 			if (data.logical_size > 0) {
 				var ratio = (data.physical_size / data.logical_size);
 				$("#Compress_Ratio").text(Util.format_number(ratio, 2));
-				// $("#Size_Compressed").val(ratio);
 			} else {
 				$("#Compress_Ratio").text("1.00");
-				// $("#Size_Compressed").val(1);
 			}
 
 			if (data.logical_size > 0) {
@@ -395,7 +393,7 @@ var Gui = (function() {
 				document.getElementById("Breakdown_Skipped").style.width = "" + 100 * (data.skipped.physical_size / total).toFixed(2) + "%";
 			}
 
-			$("#Space_Saved").text(Util.bytes_to_human(data.logical_size - data.physical_size));
+			$("#Space_Saved").text(Util.bytes_to_human(data.compressed.logical_size - data.compressed.physical_size));
 
 			$("#File_Count_Compressed").text(Util.format_number(data.compressed.count, 0));
 			$("#File_Count_Compressible").text(Util.format_number(data.compressible.count, 0));
