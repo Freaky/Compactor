@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use filesize::file_real_size;
 use globset::GlobSet;
-use ignore::WalkBuilder;
+use walkdir::WalkDir;
 use serde_derive::Serialize;
 
 use crate::background::{Background, ControlToken};
@@ -180,9 +180,8 @@ impl Background for FolderScan {
 
         let mut last_status = Instant::now();
 
-        let walker = WalkBuilder::new(&self.path)
-            .standard_filters(false)
-            .build()
+        let walker = WalkDir::new(&self.path)
+            .into_iter()
             .filter_map(|e| e.map_err(|e| eprintln!("Error: {:?}", e)).ok())
             .filter_map(|e| e.metadata().map(|md| (e, md)).ok())
             .filter(|(_, md)| md.is_file())
