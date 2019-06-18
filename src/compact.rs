@@ -131,7 +131,7 @@ impl std::fmt::Display for Compression {
         match self {
             Compression::Xpress4k => write!(f, "XPRESS4k"),
             Compression::Xpress8k => write!(f, "XPRESS8K"),
-            Compression::Xpress16k => write!(f, "XPRES16K"),
+            Compression::Xpress16k => write!(f, "XPRESS16K"),
             Compression::Lzx => write!(f, "LZX"),
         }
     }
