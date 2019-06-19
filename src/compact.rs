@@ -363,7 +363,7 @@ fn compact_works_i_guess() {
 
     let supported = system_supports_compression().expect("system_supports_compression");
 
-    if supported && file_supports_compression(&path).expect("is_compression_supported") {
+    if supported && file_supports_compression(&path).expect("file_supports_compression") {
         uncompress_file(&path).expect("uncompress_file");
         assert_eq!(
             None,
