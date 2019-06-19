@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
 
+use std::convert::TryFrom;
 use std::ffi::{CString, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
@@ -98,7 +99,7 @@ impl _FILE_PROVIDER_EXTERNAL_INFO_V1 {
     fn new(compression: Compression) -> Self {
         Self {
             Version: FILE_PROVIDER_CURRENT_VERSION,
-            Algorithm: compression.to_api(),
+            Algorithm: compression.into(),
             Flags: 0,
         }
     }
@@ -152,23 +153,27 @@ impl FromStr for Compression {
     }
 }
 
-impl Compression {
-    fn to_api(self) -> ULONG {
-        match self {
+impl TryFrom<ULONG> for Compression {
+    type Error = ();
+
+    fn try_from(value: ULONG) -> Result<Self, Self::Error> {
+        match value {
+            FILE_PROVIDER_COMPRESSION_XPRESS4K => Ok(Compression::Xpress4k),
+            FILE_PROVIDER_COMPRESSION_XPRESS8K => Ok(Compression::Xpress8k),
+            FILE_PROVIDER_COMPRESSION_XPRESS16K => Ok(Compression::Xpress16k),
+            FILE_PROVIDER_COMPRESSION_LZX => Ok(Compression::Lzx),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<Compression> for ULONG {
+    fn from(value: Compression) -> Self {
+        match value {
             Compression::Xpress4k => FILE_PROVIDER_COMPRESSION_XPRESS4K,
             Compression::Xpress8k => FILE_PROVIDER_COMPRESSION_XPRESS8K,
             Compression::Xpress16k => FILE_PROVIDER_COMPRESSION_XPRESS16K,
             Compression::Lzx => FILE_PROVIDER_COMPRESSION_LZX,
-        }
-    }
-
-    fn from_api(c: ULONG) -> Option<Self> {
-        match c {
-            FILE_PROVIDER_COMPRESSION_XPRESS4K => Some(Compression::Xpress4k),
-            FILE_PROVIDER_COMPRESSION_XPRESS8K => Some(Compression::Xpress8k),
-            FILE_PROVIDER_COMPRESSION_XPRESS16K => Some(Compression::Xpress16k),
-            FILE_PROVIDER_COMPRESSION_LZX => Some(Compression::Lzx),
-            _ => None,
         }
     }
 }
@@ -264,7 +269,7 @@ pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Co
 
     if SUCCEEDED(ret) {
         if is_external > 0 && provider == WOF_PROVIDER_FILE {
-            Ok(Compression::from_api(file_info.Algorithm))
+            Ok(Compression::try_from(file_info.Algorithm).ok())
         } else {
             Ok(None)
         }
