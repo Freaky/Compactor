@@ -21,12 +21,6 @@ use crate::folder::FolderSummary;
 use crate::persistence;
 use crate::settings::{self, Config};
 
-const HTML_HEAD: &str = include_str!("ui/head.html");
-const HTML_CSS: &str = include_str!("ui/style.css");
-const HTML_JS_DEPS: &str = include_str!("ui/cash.min.js");
-const HTML_JS_APP: &str = include_str!("ui/app.js");
-const HTML_REST: &str = include_str!("ui/rest.html");
-
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -163,15 +157,15 @@ pub fn spawn_gui() {
 
     set_dpi_aware();
 
-    let mut html = String::new();
-    html.push_str(HTML_HEAD);
-    html.push_str("<style>\n");
-    html.push_str(HTML_CSS);
-    html.push_str("\n</style><script>\n");
-    html.push_str(HTML_JS_DEPS);
-    html.push_str(HTML_JS_APP);
-    html.push_str("\n</script>\n");
-    html.push_str(HTML_REST);
+    let html = format!(
+        include_str!("ui/index.html"),
+        style = include_str!("ui/style.css"),
+        script = format!(
+            "{}\n{}",
+            include_str!("ui/cash.min.js"),
+            include_str!("ui/app.js")
+        )
+    );
 
     let (from_gui, from_gui_rx) = bounded::<GuiRequest>(128);
 
