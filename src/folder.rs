@@ -234,9 +234,9 @@ impl Background for FolderScan {
 #[test]
 fn it_walks() {
     use crate::background::BackgroundHandle;
-    use crate::settings::Settings;
+    use crate::settings::Config;
 
-    let gs = Settings::get().globset().unwrap();
+    let gs = Config::default().globset().unwrap();
     let scanner = FolderScan::new("C:\\Games", gs);
 
     let task = BackgroundHandle::spawn(scanner);

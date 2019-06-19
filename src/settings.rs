@@ -147,7 +147,7 @@ pub fn save() {
 
 #[test]
 fn test_settings() {
-    let s = Settings::default();
+    let s = Config::default();
 
     assert!(s.globset().is_ok());
     let gs = s.globset().unwrap();
