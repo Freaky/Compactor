@@ -11,7 +11,7 @@ use crate::compression::BackgroundCompactor;
 use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
-use crate::settings::{self, Settings};
+use crate::settings;
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
