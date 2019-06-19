@@ -197,7 +197,7 @@ impl Background for FolderScan {
 
             let fi = FileInfo {
                 path: shortname,
-                logical_size: metadata.len(),
+                logical_size: metadata.len().max(physical),
                 physical_size: physical,
             };
 
