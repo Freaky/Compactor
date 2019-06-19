@@ -18,8 +18,8 @@ use winapi::um::winnt;
 use crate::backend::Backend;
 use crate::compact::system_supports_compression;
 use crate::folder::FolderSummary;
-use crate::settings::{self, Config};
 use crate::persistence;
+use crate::settings::{self, Config};
 
 const HTML_HEAD: &str = include_str!("ui/head.html");
 const HTML_CSS: &str = include_str!("ui/style.css");
@@ -94,11 +94,7 @@ impl<T> GuiWrapper<T> {
             "Response.dispatch({})",
             serde_json::to_string(msg).expect("serialize")
         );
-        self.0
-            .dispatch(move |wv| {
-                wv.eval(&js)
-            })
-            .ok(); // let errors bubble through via messages
+        self.0.dispatch(move |wv| wv.eval(&js)).ok(); // let errors bubble through via messages
     }
 
     pub fn version(&self) {
@@ -215,10 +211,7 @@ pub fn spawn_gui() {
                         );
                         webview
                             .dialog()
-                            .info(
-                                "Settings Saved",
-                                "Settings Updated",
-                            )
+                            .info("Settings Saved", "Settings Updated")
                             .ok();
                         settings::set(s);
                         settings::save();
@@ -270,10 +263,10 @@ pub fn spawn_gui() {
             .error(
                 "Unsupported OS",
                 "Compactor requires Windows 10 features, \
-                and is completely untested on older systems.\n\n\
-                Proceed if you fancy being a guinea pig.\n\n\
-                Analysis will probably work, \
-                compression and decompression will not."
+                 and is completely untested on older systems.\n\n\
+                 Proceed if you fancy being a guinea pig.\n\n\
+                 Analysis will probably work, \
+                 compression and decompression will not.",
             )
             .ok();
     }

@@ -1,4 +1,4 @@
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod backend;
 mod background;
@@ -8,8 +8,8 @@ mod compresstimate;
 mod filesdb;
 mod folder;
 mod gui;
-mod settings;
 mod persistence;
+mod settings;
 
 fn main() {
     if let Err(e) = std::panic::catch_unwind(gui::spawn_gui) {

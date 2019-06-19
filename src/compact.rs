@@ -1,12 +1,12 @@
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
 
-use std::str::FromStr;
 use std::ffi::{CString, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::Path;
+use std::str::FromStr;
 
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 use winapi::shared::minwindef::{BOOL, DWORD, PBOOL, PULONG, ULONG};
 use winapi::shared::ntdef::PVOID;
@@ -108,7 +108,7 @@ impl SetFileCompression {
     fn new(compression: Compression) -> Self {
         Self(
             _WOF_EXTERNAL_INFO::default(),
-            _FILE_PROVIDER_EXTERNAL_INFO_V1::new(compression)
+            _FILE_PROVIDER_EXTERNAL_INFO_V1::new(compression),
         )
     }
 }
@@ -273,10 +273,7 @@ pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Co
     }
 }
 
-pub fn compress_file<P: AsRef<Path>>(
-    path: P,
-    compression: Compression,
-) -> std::io::Result<bool> {
+pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::io::Result<bool> {
     let file = std::fs::File::open(path)?;
 
     let mut data = SetFileCompression::new(compression);

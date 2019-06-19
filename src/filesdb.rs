@@ -1,4 +1,3 @@
-
 use std::sync::{Mutex, MutexGuard};
 
 use hashfilter::HashFilter;

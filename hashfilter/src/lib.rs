@@ -20,7 +20,7 @@ impl HashFilter {
     pub fn open<P: AsRef<Path>>(path: P) -> Self {
         Self {
             path: Some(path.as_ref().to_owned()),
-            .. Self::default()
+            ..Self::default()
         }
     }
 

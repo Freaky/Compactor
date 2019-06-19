@@ -1,11 +1,10 @@
-
-use std::path::PathBuf;
 use std::fs::File;
+use std::path::PathBuf;
 
 use app_dirs::*;
 
-use crate::settings;
 use crate::filesdb::FilesDb;
+use crate::settings;
 
 const APP_INFO: AppInfo = AppInfo {
     name: "Compactor",

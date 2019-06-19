@@ -1,10 +1,10 @@
-use std::path::PathBuf;
 use std::path::Path;
-use std::sync::{Mutex};
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use lazy_static::lazy_static;
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::compact::Compression;
 

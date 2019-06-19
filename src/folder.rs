@@ -6,8 +6,8 @@ use std::time::{Duration, Instant};
 
 use filesize::file_real_size;
 use globset::GlobSet;
-use walkdir::WalkDir;
 use serde_derive::Serialize;
+use walkdir::WalkDir;
 
 use crate::background::{Background, ControlToken};
 use crate::filesdb::FilesDb;
