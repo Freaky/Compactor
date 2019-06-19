@@ -16,7 +16,7 @@ use winapi::um::winbase;
 use winapi::um::winnt;
 
 use crate::backend::Backend;
-use crate::compact::{Compact, Compression};
+use crate::compact::system_supports_compression;
 use crate::folder::FolderSummary;
 use crate::settings::{self, Config};
 use crate::persistence;
@@ -196,13 +196,10 @@ pub fn spawn_gui() {
                     compression,
                     excludes,
                 }) => {
-                    let c = Compression::from_str(compression).expect("Compression");
-                    let globs = excludes.split('\n').map(str::to_owned).collect();
-
                     let s = Config {
                         decimal,
-                        compression: c,
-                        excludes: globs,
+                        compression: compression.parse().unwrap_or_default(),
+                        excludes: excludes.split('\n').map(str::to_owned).collect(),
                     };
 
                     if let Err(msg) = s.globset() {
@@ -267,7 +264,7 @@ pub fn spawn_gui() {
     );
     // Config::set(s);
 
-    if !Compact::system_supports_compression().unwrap_or_default() {
+    if !system_supports_compression().unwrap_or_default() {
         webview
             .dialog()
             .error(

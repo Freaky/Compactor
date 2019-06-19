@@ -5,7 +5,7 @@ use crossbeam_channel::{Receiver, Sender};
 
 use crate::background::Background;
 use crate::background::ControlToken;
-use crate::compact::{Compact, Compression};
+use crate::compact::{self, Compression};
 use crate::compresstimate::compresstimate;
 
 #[derive(Debug)]
@@ -43,11 +43,11 @@ impl Background for BackgroundCompactor {
                 Some(file) => {
                     let ret = match self.compression {
                         Some(compression) => match compresstimate(&file) {
-                            Ok(ratio) if ratio < 0.95 => Compact::compress_file(&file, compression),
+                            Ok(ratio) if ratio < 0.95 => compact::compress_file(&file, compression),
                             Ok(_) => Ok(false),
                             Err(e) => Err(e),
                         },
-                        None => Compact::uncompress_file(&file).map(|_| true),
+                        None => compact::uncompress_file(&file).map(|_| true),
                     };
 
                     if self.files_out.send((file, ret)).is_err() {

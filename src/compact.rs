@@ -1,5 +1,6 @@
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
 
+use std::str::FromStr;
 use std::ffi::{CString, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
@@ -137,6 +138,20 @@ impl std::fmt::Display for Compression {
     }
 }
 
+impl FromStr for Compression {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "XPRESS4K" => Ok(Compression::Xpress4k),
+            "XPRESS8K" => Ok(Compression::Xpress8k),
+            "XPRESS16K" => Ok(Compression::Xpress16k),
+            "LZX" => Ok(Compression::Lzx),
+            _ => Err(()),
+        }
+    }
+}
+
 impl Compression {
     fn to_api(self) -> ULONG {
         match self {
@@ -156,181 +171,167 @@ impl Compression {
             _ => None,
         }
     }
+}
 
-    pub fn from_str<S: AsRef<str>>(s: S) -> Option<Self> {
-        match s.as_ref() {
-            "XPRESS4K" => Some(Compression::Xpress4k),
-            "XPRESS8K" => Some(Compression::Xpress8k),
-            "XPRESS16K" => Some(Compression::Xpress16k),
-            "LZX" => Some(Compression::Lzx),
-            _ => None,
+pub fn system_supports_compression() -> std::io::Result<bool> {
+    let dll = CString::new("WofUtil.dll").unwrap();
+    let path = CString::new("\\").unwrap();
+    let mut handle = 0;
+
+    let len = unsafe { GetFileVersionInfoSizeA(dll.as_ptr(), &mut handle) };
+
+    if len == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+
+    let mut buf = vec![0u8; len as usize];
+
+    let ret = unsafe {
+        GetFileVersionInfoA(
+            dll.as_ptr(),
+            handle,
+            len,
+            buf.as_mut_ptr() as *mut _ as PVOID,
+        )
+    };
+
+    if ret == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+
+    let mut pinfo: PVOID = std::ptr::null_mut();
+    let mut pinfo_size = 0;
+
+    let ret = unsafe {
+        VerQueryValueA(
+            buf.as_mut_ptr() as *mut _ as PVOID,
+            path.as_ptr(),
+            &mut pinfo,
+            &mut pinfo_size,
+        )
+    };
+
+    if ret == 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+
+    assert!(pinfo_size as usize >= std::mem::size_of::<VS_FIXEDFILEINFO>());
+    assert!(!pinfo.is_null());
+
+    let pinfo: &VS_FIXEDFILEINFO = unsafe { &*(pinfo as *const VS_FIXEDFILEINFO) };
+    assert!(pinfo.dwSignature == VS_FIXEDFILEINFO_SIGNATURE);
+
+    Ok((pinfo.dwFileVersionMS >> 16) & 0xffff >= 10)
+}
+
+pub fn file_supports_compression<P: AsRef<Path>>(path: P) -> std::io::Result<bool> {
+    let file = std::fs::File::open(path)?;
+    let mut version: ULONG = 0;
+
+    let ret = unsafe {
+        WofGetDriverVersion(
+            file.as_raw_handle() as HANDLE,
+            WOF_PROVIDER_FILE,
+            &mut version,
+        )
+    };
+
+    if SUCCEEDED(ret) && version > 0 {
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Compression>> {
+    let mut p: Vec<u16> = path.as_ref().encode_wide().collect();
+    p.push(0);
+
+    let mut is_external: BOOL = 0;
+    let mut provider: ULONG = 0;
+    let mut file_info: _WOF_FILE_COMPRESSION_INFO_V1 = unsafe { std::mem::zeroed() };
+    let mut len: ULONG = std::mem::size_of::<_WOF_FILE_COMPRESSION_INFO_V1>() as ULONG;
+
+    let ret = unsafe {
+        WofIsExternalFile(
+            p.as_ptr(),
+            &mut is_external,
+            &mut provider,
+            &mut file_info as *mut _ as PVOID,
+            &mut len,
+        )
+    };
+
+    if SUCCEEDED(ret) {
+        if is_external > 0 && provider == WOF_PROVIDER_FILE {
+            Ok(Compression::from_api(file_info.Algorithm))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
+    }
+}
+
+pub fn compress_file<P: AsRef<Path>>(
+    path: P,
+    compression: Compression,
+) -> std::io::Result<bool> {
+    let file = std::fs::File::open(path)?;
+
+    let mut data = SetFileCompression::new(compression);
+    let len = std::mem::size_of::<SetFileCompression>();
+    let mut bytes_returned: DWORD = 0;
+
+    let ret = unsafe {
+        DeviceIoControl(
+            file.as_raw_handle() as HANDLE,
+            FSCTL_SET_EXTERNAL_BACKING,
+            &mut data as *mut _ as PVOID,
+            len as DWORD,
+            std::ptr::null_mut(),
+            0,
+            &mut bytes_returned,
+            std::ptr::null_mut(),
+        )
+    };
+
+    // BOOL my arse
+    if SUCCEEDED(ret) {
+        Ok(true)
+    } else {
+        let e = HRESULT_CODE(ret);
+
+        if e == ERROR_COMPRESSION_NOT_BENEFICIAL {
+            Ok(false)
+        } else {
+            Err(std::io::Error::from_raw_os_error(e))
         }
     }
 }
 
-pub struct Compact;
+pub fn uncompress_file<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
+    let file = std::fs::File::open(path)?;
 
-impl Compact {
-    pub fn system_supports_compression() -> std::io::Result<bool> {
-        let dll = CString::new("WofUtil.dll").unwrap();
-        let path = CString::new("\\").unwrap();
-        let mut handle = 0;
+    let mut bytes_returned: DWORD = 0;
 
-        let len = unsafe { GetFileVersionInfoSizeA(dll.as_ptr(), &mut handle) };
+    let ret = unsafe {
+        DeviceIoControl(
+            file.as_raw_handle() as HANDLE,
+            FSCTL_DELETE_EXTERNAL_BACKING,
+            std::ptr::null_mut(),
+            0,
+            std::ptr::null_mut(),
+            0,
+            &mut bytes_returned,
+            std::ptr::null_mut(),
+        )
+    };
 
-        if len == 0 {
-            return Err(std::io::Error::last_os_error());
-        }
-
-        let mut buf = vec![0u8; len as usize];
-
-        let ret = unsafe {
-            GetFileVersionInfoA(
-                dll.as_ptr(),
-                handle,
-                len,
-                buf.as_mut_ptr() as *mut _ as PVOID,
-            )
-        };
-
-        if ret == 0 {
-            return Err(std::io::Error::last_os_error());
-        }
-
-        let mut pinfo: PVOID = std::ptr::null_mut();
-        let mut pinfo_size = 0;
-
-        let ret = unsafe {
-            VerQueryValueA(
-                buf.as_mut_ptr() as *mut _ as PVOID,
-                path.as_ptr(),
-                &mut pinfo,
-                &mut pinfo_size,
-            )
-        };
-
-        if ret == 0 {
-            return Err(std::io::Error::last_os_error());
-        }
-
-        assert!(pinfo_size as usize >= std::mem::size_of::<VS_FIXEDFILEINFO>());
-        assert!(!pinfo.is_null());
-
-        let pinfo: &VS_FIXEDFILEINFO = unsafe { &*(pinfo as *const VS_FIXEDFILEINFO) };
-        assert!(pinfo.dwSignature == VS_FIXEDFILEINFO_SIGNATURE);
-
-        Ok((pinfo.dwFileVersionMS >> 16) & 0xffff >= 10)
-    }
-
-    pub fn file_supports_compression<P: AsRef<Path>>(path: P) -> std::io::Result<bool> {
-        let file = std::fs::File::open(path)?;
-        let mut version: ULONG = 0;
-
-        let ret = unsafe {
-            WofGetDriverVersion(
-                file.as_raw_handle() as HANDLE,
-                WOF_PROVIDER_FILE,
-                &mut version,
-            )
-        };
-
-        if SUCCEEDED(ret) && version > 0 {
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Compression>> {
-        let mut p: Vec<u16> = path.as_ref().encode_wide().collect();
-        p.push(0);
-
-        let mut is_external: BOOL = 0;
-        let mut provider: ULONG = 0;
-        let mut file_info: _WOF_FILE_COMPRESSION_INFO_V1 = unsafe { std::mem::zeroed() };
-        let mut len: ULONG = std::mem::size_of::<_WOF_FILE_COMPRESSION_INFO_V1>() as ULONG;
-
-        let ret = unsafe {
-            WofIsExternalFile(
-                p.as_ptr(),
-                &mut is_external,
-                &mut provider,
-                &mut file_info as *mut _ as PVOID,
-                &mut len,
-            )
-        };
-
-        if SUCCEEDED(ret) {
-            if is_external > 0 && provider == WOF_PROVIDER_FILE {
-                Ok(Compression::from_api(file_info.Algorithm))
-            } else {
-                Ok(None)
-            }
-        } else {
-            Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
-        }
-    }
-
-    pub fn compress_file<P: AsRef<Path>>(
-        path: P,
-        compression: Compression,
-    ) -> std::io::Result<bool> {
-        let file = std::fs::File::open(path)?;
-
-        let mut data = SetFileCompression::new(compression);
-        let len = std::mem::size_of::<SetFileCompression>();
-        let mut bytes_returned: DWORD = 0;
-
-        let ret = unsafe {
-            DeviceIoControl(
-                file.as_raw_handle() as HANDLE,
-                FSCTL_SET_EXTERNAL_BACKING,
-                &mut data as *mut _ as PVOID,
-                len as DWORD,
-                std::ptr::null_mut(),
-                0,
-                &mut bytes_returned,
-                std::ptr::null_mut(),
-            )
-        };
-
-        // BOOL my arse
-        if SUCCEEDED(ret) {
-            Ok(true)
-        } else {
-            let e = HRESULT_CODE(ret);
-
-            if e == ERROR_COMPRESSION_NOT_BENEFICIAL {
-                Ok(false)
-            } else {
-                Err(std::io::Error::from_raw_os_error(e))
-            }
-        }
-    }
-
-    pub fn uncompress_file<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-        let file = std::fs::File::open(path)?;
-
-        let mut bytes_returned: DWORD = 0;
-
-        let ret = unsafe {
-            DeviceIoControl(
-                file.as_raw_handle() as HANDLE,
-                FSCTL_DELETE_EXTERNAL_BACKING,
-                std::ptr::null_mut(),
-                0,
-                std::ptr::null_mut(),
-                0,
-                &mut bytes_returned,
-                std::ptr::null_mut(),
-            )
-        };
-
-        if SUCCEEDED(ret) {
-            Ok(())
-        } else {
-            Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
-        }
+    if SUCCEEDED(ret) {
+        Ok(())
+    } else {
+        Err(std::io::Error::from_raw_os_error(HRESULT_CODE(ret)))
     }
 }
 
