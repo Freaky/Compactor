@@ -19,10 +19,10 @@ pub struct Backend<T> {
     info: Option<FolderInfo>,
 }
 
-fn format_size(size: u64) -> String {
+fn format_size(size: u64, decimal: bool) -> String {
     use humansize::{file_size_opts as options, FileSize};
 
-    size.file_size(options::BINARY).expect("file size")
+    size.file_size(if decimal { options::DECIMAL } else { options::BINARY }).expect("file size")
 }
 
 impl<T> Backend<T> {
@@ -154,6 +154,7 @@ impl<T> Backend<T> {
         let mut stopped = false;
 
         let old_size = folder.physical_size;
+        let compressible_size = folder.summary().compressible.physical_size;
 
         let mut incompressible = FilesDb::borrow();
         let _ = incompressible.load();
@@ -298,11 +299,13 @@ impl<T> Backend<T> {
         let _ = incompressible.save();
 
         let new_size = folder.physical_size;
+        let s = settings::get();
 
         let msg = format!(
-            "Compacted {} files saving {} in {:.2?}",
+            "Compacted {} in {} files, saving {} in {:.2?}",
+            format_size(compressible_size, s.decimal),
             done,
-            format_size(old_size - new_size),
+            format_size(old_size - new_size, s.decimal),
             start.elapsed()
         );
 
@@ -452,7 +455,7 @@ impl<T> Backend<T> {
         let msg = format!(
             "Expanded {} files wasting {} in {:.2?}",
             done,
-            format_size(new_size - old_size),
+            format_size(new_size - old_size, settings::get().decimal),
             start.elapsed()
         );
 
