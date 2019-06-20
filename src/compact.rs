@@ -95,8 +95,8 @@ impl Default for _WOF_EXTERNAL_INFO {
     }
 }
 
-impl _FILE_PROVIDER_EXTERNAL_INFO_V1 {
-    fn new(compression: Compression) -> Self {
+impl From<Compression> for _FILE_PROVIDER_EXTERNAL_INFO_V1 {
+    fn from(compression: Compression) -> Self {
         Self {
             Version: FILE_PROVIDER_CURRENT_VERSION,
             Algorithm: compression.into(),
@@ -105,11 +105,11 @@ impl _FILE_PROVIDER_EXTERNAL_INFO_V1 {
     }
 }
 
-impl SetFileCompression {
-    fn new(compression: Compression) -> Self {
+impl From<Compression> for SetFileCompression {
+    fn from(compression: Compression) -> Self {
         Self(
             _WOF_EXTERNAL_INFO::default(),
-            _FILE_PROVIDER_EXTERNAL_INFO_V1::new(compression),
+            _FILE_PROVIDER_EXTERNAL_INFO_V1::from(compression),
         )
     }
 }
@@ -281,7 +281,7 @@ pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Co
 pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::io::Result<bool> {
     let file = std::fs::File::open(path)?;
 
-    let mut data = SetFileCompression::new(compression);
+    let mut data = SetFileCompression::from(compression);
     let len = std::mem::size_of::<SetFileCompression>();
     let mut bytes_returned: DWORD = 0;
 
