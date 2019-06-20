@@ -267,23 +267,22 @@ pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Co
 }
 
 unsafe fn as_byte_slice<T: Sized + Copy>(p: &T) -> &[u8] {
-    std::slice::from_raw_parts(
-        (p as *const T) as *const u8,
-        std::mem::size_of::<T>(),
-    )
+    std::slice::from_raw_parts((p as *const T) as *const u8, std::mem::size_of::<T>())
 }
 
 pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::io::Result<bool> {
     let file = std::fs::File::open(path)?;
 
-    const LEN: usize = std::mem::size_of::<_WOF_EXTERNAL_INFO>() +
-        std::mem::size_of::<_FILE_PROVIDER_EXTERNAL_INFO_V1>();
+    const LEN: usize = std::mem::size_of::<_WOF_EXTERNAL_INFO>()
+        + std::mem::size_of::<_FILE_PROVIDER_EXTERNAL_INFO_V1>();
 
     let mut data = [0u8; LEN];
     let (wof, inf) = data.split_at_mut(std::mem::size_of::<_WOF_EXTERNAL_INFO>());
     unsafe {
         wof.copy_from_slice(as_byte_slice(&_WOF_EXTERNAL_INFO::default()));
-        inf.copy_from_slice(as_byte_slice(&_FILE_PROVIDER_EXTERNAL_INFO_V1::from(compression)));
+        inf.copy_from_slice(as_byte_slice(&_FILE_PROVIDER_EXTERNAL_INFO_V1::from(
+            compression,
+        )));
     }
 
     let mut bytes_returned: DWORD = 0;
@@ -373,10 +372,7 @@ fn compact_works_i_guess() {
 
     if supported && file_supports_compression(&path).expect("file_supports_compression") {
         uncompress_file(&path).expect("uncompress_file");
-        assert_eq!(
-            None,
-            detect_compression(&path).expect("detect_compression")
-        );
+        assert_eq!(None, detect_compression(&path).expect("detect_compression"));
         compress_file(&path, Compression::default()).expect("compress_file");
     }
 }

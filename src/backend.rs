@@ -22,7 +22,12 @@ pub struct Backend<T> {
 fn format_size(size: u64, decimal: bool) -> String {
     use humansize::{file_size_opts as options, FileSize};
 
-    size.file_size(if decimal { options::DECIMAL } else { options::BINARY }).expect("file size")
+    size.file_size(if decimal {
+        options::DECIMAL
+    } else {
+        options::BINARY
+    })
+    .expect("file size")
 }
 
 impl<T> Backend<T> {
