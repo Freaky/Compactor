@@ -40,9 +40,6 @@ STRUCT! {
     }
 }
 
-#[repr(C)]
-struct SetFileCompression(_WOF_EXTERNAL_INFO, _FILE_PROVIDER_EXTERNAL_INFO_V1);
-
 type P_VS_FIXEDFILEINFO = *mut VS_FIXEDFILEINFO;
 STRUCT! {
     struct VS_FIXEDFILEINFO {
@@ -102,15 +99,6 @@ impl From<Compression> for _FILE_PROVIDER_EXTERNAL_INFO_V1 {
             Algorithm: compression.into(),
             Flags: 0,
         }
-    }
-}
-
-impl From<Compression> for SetFileCompression {
-    fn from(compression: Compression) -> Self {
-        Self(
-            _WOF_EXTERNAL_INFO::default(),
-            _FILE_PROVIDER_EXTERNAL_INFO_V1::from(compression),
-        )
     }
 }
 
@@ -278,11 +266,26 @@ pub fn detect_compression<P: AsRef<OsStr>>(path: P) -> std::io::Result<Option<Co
     }
 }
 
+unsafe fn as_byte_slice<T: Sized + Copy>(p: &T) -> &[u8] {
+    std::slice::from_raw_parts(
+        (p as *const T) as *const u8,
+        std::mem::size_of::<T>(),
+    )
+}
+
 pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::io::Result<bool> {
     let file = std::fs::File::open(path)?;
 
-    let mut data = SetFileCompression::from(compression);
-    let len = std::mem::size_of::<SetFileCompression>();
+    const LEN: usize = std::mem::size_of::<_WOF_EXTERNAL_INFO>() +
+        std::mem::size_of::<_FILE_PROVIDER_EXTERNAL_INFO_V1>();
+
+    let mut data = [0u8; LEN];
+    let (wof, inf) = data.split_at_mut(std::mem::size_of::<_WOF_EXTERNAL_INFO>());
+    unsafe {
+        wof.copy_from_slice(as_byte_slice(&_WOF_EXTERNAL_INFO::default()));
+        inf.copy_from_slice(as_byte_slice(&_FILE_PROVIDER_EXTERNAL_INFO_V1::from(compression)));
+    }
+
     let mut bytes_returned: DWORD = 0;
 
     let ret = unsafe {
@@ -290,7 +293,7 @@ pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::
             file.as_raw_handle() as HANDLE,
             FSCTL_SET_EXTERNAL_BACKING,
             &mut data as *mut _ as PVOID,
-            len as DWORD,
+            data.len() as DWORD,
             std::ptr::null_mut(),
             0,
             &mut bytes_returned,
