@@ -40,7 +40,6 @@ STRUCT! {
     }
 }
 
-type P_VS_FIXEDFILEINFO = *mut VS_FIXEDFILEINFO;
 STRUCT! {
     struct VS_FIXEDFILEINFO {
         dwSignature: DWORD,
