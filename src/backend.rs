@@ -144,7 +144,7 @@ impl<T> Backend<T> {
         let (send_file, send_file_rx) = bounded::<Option<PathBuf>>(1);
         let (recv_result_tx, recv_result) = bounded::<(PathBuf, io::Result<bool>)>(1);
 
-        let compression = Some(Compression::default());
+        let compression = Some(settings::get().compression);
         let compactor = BackgroundCompactor::new(compression, send_file_rx, recv_result_tx);
         let task = BackgroundHandle::spawn(compactor);
         let start = Instant::now();
