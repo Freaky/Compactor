@@ -141,7 +141,7 @@ impl<T> Backend<T> {
 
     // Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fhtagn.
     fn compress_loop(&mut self) {
-        let (send_file, send_file_rx) = bounded::<Option<PathBuf>>(1);
+        let (send_file, send_file_rx) = bounded::<Option<(PathBuf, u64)>>(1);
         let (recv_result_tx, recv_result) = bounded::<(PathBuf, io::Result<bool>)>(1);
 
         let compression = Some(settings::get().compression);
@@ -210,7 +210,7 @@ impl<T> Backend<T> {
 
             if let Some(mut fi) = folder.pop(FileKind::Compressible) {
                 send_file
-                    .send(Some(folder.path.join(&fi.path)))
+                    .send(Some((folder.path.join(&fi.path), fi.logical_size)))
                     .expect("send_file");
 
                 if !displayed && last_update.elapsed() > Duration::from_millis(50) {
@@ -323,7 +323,7 @@ impl<T> Backend<T> {
 
     // Oh no, not again.
     fn uncompress_loop(&mut self) {
-        let (send_file, send_file_rx) = bounded::<Option<PathBuf>>(1);
+        let (send_file, send_file_rx) = bounded::<Option<(PathBuf, u64)>>(1);
         let (recv_result_tx, recv_result) = bounded::<(PathBuf, io::Result<bool>)>(1);
 
         let compactor = BackgroundCompactor::new(None, send_file_rx, recv_result_tx);
@@ -387,7 +387,7 @@ impl<T> Backend<T> {
 
             if let Some(mut fi) = folder.pop(FileKind::Compressed) {
                 send_file
-                    .send(Some(folder.path.join(&fi.path)))
+                    .send(Some((folder.path.join(&fi.path), fi.logical_size)))
                     .expect("send_file");
 
                 let mut waiting = false;
