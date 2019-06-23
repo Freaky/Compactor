@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 app_dirs = "1.2.1"
+compresstimator = { git = "https://github.com/Freaky/compresstimator.git", rev = "3214f5fc14a116cff095b30acf376cc5e128305d" }
 crossbeam-channel = "0.3"
 ctrlc = "3.0"
 filesize = "0.1"
@@ -16,7 +17,6 @@ globset = "0.4"
 hashfilter = { path = "hashfilter" }
 humansize = "1.1.0"
 lazy_static = "1.3.0"
-lz4 = "1.23.1"
 open = "1.2.2"
 serde = "1.0"
 serde_derive = "1.0"

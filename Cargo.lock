@@ -105,6 +105,7 @@ name = "compactor"
 version = "0.7.0"
 dependencies = [
  "app_dirs 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "compresstimator 0.1.0 (git+https://github.com/Freaky/compresstimator.git?rev=3214f5fc14a116cff095b30acf376cc5e128305d)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "filesize 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -114,7 +115,6 @@ dependencies = [
  "hashfilter 0.1.0",
  "humansize 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lz4 1.23.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "open 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -126,6 +126,14 @@ dependencies = [
  "web-view 0.4.0",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "winres 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "compresstimator"
+version = "0.1.0"
+source = "git+https://github.com/Freaky/compresstimator.git?rev=3214f5fc14a116cff095b30acf376cc5e128305d#3214f5fc14a116cff095b30acf376cc5e128305d"
+dependencies = [
+ "lz4 1.23.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -714,6 +722,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)" = "39f75544d7bbaf57560d2168f28fd649ff9c76153874db88bdbdfd839b1a7e7d"
 "checksum cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "b486ce3ccf7ffd79fdeb678eac06a9e6c09fc88d33836340becb8fffe87c5e33"
 "checksum chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "45912881121cb26fad7c38c17ba7daa18764771836b34fab7d3fbd93ed633878"
+"checksum compresstimator 0.1.0 (git+https://github.com/Freaky/compresstimator.git?rev=3214f5fc14a116cff095b30acf376cc5e128305d)" = "<none>"
 "checksum crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "0f0ed1a4de2235cabda8558ff5840bffb97fcb64c97827f354a451307df5f72b"
 "checksum crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "f8306fcef4a7b563b76b7dd949ca48f52bc1141aa067d2ea09565f3e2652aa5c"
 "checksum ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c7dfd2d8b4c82121dfdff120f818e09fc4380b0b7e17a742081a89b94853e87f"
