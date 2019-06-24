@@ -29,9 +29,9 @@
       </section>
 
       <section id="Activity" style="display: none;">
-        <div id="Activity_Text" style="line-height: 1.2em; height: 1.2em;overflow: hidden;white-space: nowrap"></div>
+        <div id="Activity_Text"></div>
         <div class="ctr">
-          <progress id="Activity_Progress" style="width: 95%;"></progress>
+          <progress id="Activity_Progress"></progress>
         </div>
       </section>
 
@@ -48,17 +48,17 @@
 
       <section id="Analysis" style="display: none;">
         <div>
-          <div style="padding: 2px;"><span style="background-color: white;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Space_Saved">0 B</span> of <span id="Size_Logical">0 B</span> saved (<span id="Compress_Ratio">1.00</span>x, <span id="Size_Physical">0 B</span> on-disk)</div>
-          <div style="padding: 2px;"><span style="background-color: green;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressed_Size">0 B</span> in <span id="File_Count_Compressed">0</span> compressed</div>
-          <div style="padding: 2px;"><span style="background-color: #0079d6;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressible_Size">0 B</span> in <span id="File_Count_Compressible">0</span> compressible</div>
-          <div style="padding: 2px;"><span style="background-color: orange;border: 1px solid black;">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Skipped_Size">0 B</span> in <span id="File_Count_Skipped">0</span> excluded</div>
+          <div class="saved"><span class="box">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Space_Saved">0 B</span> of <span id="Size_Logical">0 B</span> saved (<span id="Compress_Ratio">1.00</span>x, <span id="Size_Physical">0 B</span> on-disk)</div>
+          <div class="compressed"><span class="box">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressed_Size">0 B</span> in <span id="File_Count_Compressed">0</span> compressed</div>
+          <div class="compressible"><span class="box">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Compressible_Size">0 B</span> in <span id="File_Count_Compressible">0</span> compressible</div>
+          <div class="excluded"><span class="box">&nbsp;&nbsp;&nbsp;&nbsp;</span> <span id="Skipped_Size">0 B</span> in <span id="File_Count_Skipped">0</span> excluded</div>
         </div>
 
-        <div id="File_Count_Breakdown" style="display:flex;width: 95%;font-size: smaller;border: 1px solid black;border-radius: 2px;margin: 8px auto;overflow: hidden;">
-          <div id="Breakdown_Compressed" style="width: 0;overflow: hidden;background-color: green;height: 18px;"></div>
-          <div id="Breakdown_Compressible" style="overflow: hidden;background-color: #0079d6;height: 18px;"></div>
-          <div id="Breakdown_Skipped" style="width: 0;overflow: hidden;background-color: orange;height: 18px;"></div>
-          <div id="Breakdown_Saved" style="flex: auto;overflow: hidden;background-color: white;height: 18px;"></div>
+        <div id="File_Count_Breakdown">
+          <div id="Breakdown_Compressed"></div>
+          <div id="Breakdown_Compressible"></div>
+          <div id="Breakdown_Skipped"></div>
+          <div id="Breakdown_Saved"></div>
         </div>
       </section>
     </section>

@@ -109,6 +109,64 @@ textarea {
   align-items: center;
 }
 
+#ActivityText {
+  line-height: 1.2em;
+  height: 1.2em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#Activity_Progress {
+  width: 95%;
+}
+
+#Analysis .saved .box, #Breakdown_Saved {
+  background-color: white;
+}
+
+#Analysis .compressed .box, #Breakdown_Compressed {
+  background-color: green;
+}
+
+#Analysis .compressible .box, #Breakdown_Compressible {
+  background-color: #0079d6;
+}
+
+#Analysis .excluded .box, #Breakdown_Skipped {
+  background-color: orange;
+}
+
+#Analysis .box {
+  border: 1px solid black;
+}
+
+#Analysis div div {
+  padding: 2px;
+}
+
+#File_Count_Breakdown {
+  display:flex;
+  width: 95%;
+  font-size: smaller;
+  border: 1px solid black;
+  border-radius: 2px;
+  margin: 8px auto;
+  overflow: hidden;
+}
+
+#File_Count_Breakdown div {
+  overflow: hidden;
+  height: 18px;
+}
+
+#Breakdown_Compressed, #Breakdown_Compressible, #Breakdown_Skipped {
+  width: 0;
+}
+
+#Breakdown_Saved {
+  flex: auto;
+}
+
 nav button {
   display: inline-block;
   background-color: transparent;
