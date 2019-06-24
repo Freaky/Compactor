@@ -1,4 +1,8 @@
+/* jshint strict: true, esversion: 5, browser: true */
+
 var Util = (function() {
+	"use strict";
+
 	var powers = '_KMGTPEZY';
 	var monotime = function() { return Date.now(); };
 
@@ -140,6 +144,8 @@ Util.bytes_to_human = Util.bytes_to_human_bin;
 
 // Actions call back into Rust
 var Action = (function() {
+	"use strict";
+
 	return {
 		open_url: function(url) {
 			external.invoke(JSON.stringify({ type: 'OpenUrl', url: url }));
@@ -190,6 +196,8 @@ var Action = (function() {
 
 // Responses come from Rust
 var Response = (function() {
+	"use strict";
+
 	return {
 		dispatch: function(msg) {
 			switch(msg.type) {
@@ -229,6 +237,8 @@ var Response = (function() {
 
 // Anything poking the GUI lives here
 var Gui = (function() {
+	"use strict";
+
 	return {
 		boot: function() {
 			$("a[href]").on("click", function(e) {
@@ -382,7 +392,7 @@ var Gui = (function() {
 			}
 
 			if (data.logical_size > 0) {
-				total = data.logical_size;
+				var total = data.logical_size;
 				$("#Compressed_Size").text(Util.bytes_to_human(data.compressed.physical_size));
 				$("#Compressible_Size").text(Util.bytes_to_human(data.compressible.physical_size));
 				$("#Skipped_Size").text(Util.bytes_to_human(data.skipped.physical_size));
