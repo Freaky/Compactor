@@ -122,7 +122,7 @@ var Util = (function() {
 
 		sformat: function() {
 			var args = arguments;
-			return args[0].replace(/\{(\d+)\}/g, function (m, n) { return args[parseInt(n) + 1]; });
+			return args[0].replace(/\{(\d+)\}/g, function (m, n) { return args[parseInt(n, 10) + 1]; });
 		},
 
 		range: function(a, b, step) {
