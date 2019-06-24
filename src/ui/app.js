@@ -282,8 +282,6 @@ var Gui = (function() {
 		},
 
 		set_folder: function(folder) {
-			// I swear this worked earlier :(
-			// var bits = folder.split(/:\\|\\/).map(document.createTextNode);
 			var bits = folder.split(/:\\|\\/).map(function(x) { return document.createTextNode(x); });
 			var end = bits.pop();
 
