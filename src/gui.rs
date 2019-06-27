@@ -249,7 +249,6 @@ pub fn spawn_gui() {
             excludes: s.excludes.join("\n"),
         },
     );
-    // Config::set(s);
 
     if !system_supports_compression().unwrap_or_default() {
         webview
