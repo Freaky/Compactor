@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crossbeam_channel::{bounded, Receiver};
 use ctrlc;
+use dirs_sys::known_folder;
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use web_view::*;
@@ -312,26 +313,6 @@ fn set_dpi_aware() {
 
 fn program_files() -> PathBuf {
     known_folder(&knownfolders::FOLDERID_ProgramFiles).expect("Program files path")
-}
-
-// stolen from directories crate
-// Copyright (c) 2018 directories-rs contributors
-// (MIT license)
-fn known_folder(folder_id: shtypes::REFKNOWNFOLDERID) -> Option<PathBuf> {
-    unsafe {
-        let mut path_ptr: winnt::PWSTR = std::ptr::null_mut();
-        let result =
-            shlobj::SHGetKnownFolderPath(folder_id, 0, std::ptr::null_mut(), &mut path_ptr);
-        if result == winerror::S_OK {
-            let len = winbase::lstrlenW(path_ptr) as usize;
-            let path = std::slice::from_raw_parts(path_ptr, len);
-            let ostr: std::ffi::OsString = std::os::windows::ffi::OsStringExt::from_wide(path);
-            combaseapi::CoTaskMemFree(path_ptr as *mut winapi::ctypes::c_void);
-            Some(PathBuf::from(ostr))
-        } else {
-            None
-        }
-    }
 }
 
 use lazy_static::lazy_static;

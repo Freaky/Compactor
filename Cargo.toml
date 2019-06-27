@@ -10,6 +10,7 @@ license = "MIT"
 compresstimator = { git = "https://github.com/Freaky/compresstimator.git", rev = "26ddd3f499bc46f2c8b3ce814e9723ed41b47919" }
 crossbeam-channel = "0.3"
 ctrlc = "3.0"
+dirs-sys = "0.3.3"
 directories = "2.0.1"
 filesize = "0.1"
 fs2 = "0.4.3"
