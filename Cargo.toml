@@ -4,12 +4,13 @@ version = "0.7.0"
 authors = ["Thomas Hurst <tom@hur.st>"]
 description = "An interface to Windows 10 filesystem compression"
 edition = "2018"
+license = "MIT"
 
 [dependencies]
-app_dirs = "1.2.1"
-compresstimator = { git = "https://github.com/Freaky/compresstimator.git", rev = "3214f5fc14a116cff095b30acf376cc5e128305d" }
+compresstimator = { git = "https://github.com/Freaky/compresstimator.git", rev = "26ddd3f499bc46f2c8b3ce814e9723ed41b47919" }
 crossbeam-channel = "0.3"
 ctrlc = "3.0"
+directories = "2.0.1"
 filesize = "0.1"
 fs2 = "0.4.3"
 glob = "0.3"
