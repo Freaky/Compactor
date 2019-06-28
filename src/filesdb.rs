@@ -5,7 +5,7 @@ use hashfilter::HashFilter;
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref DB: Mutex<HashFilter> = Mutex::new(HashFilter::open("incompressible.dat"));
+    static ref DB: Mutex<HashFilter> = Mutex::new(HashFilter::default());
 }
 
 pub struct FilesDb;
