@@ -8,13 +8,8 @@ use dirs_sys::known_folder;
 use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use web_view::*;
-use winapi::shared::winerror;
-use winapi::um::combaseapi;
+
 use winapi::um::knownfolders;
-use winapi::um::shlobj;
-use winapi::um::shtypes;
-use winapi::um::winbase;
-use winapi::um::winnt;
 
 use crate::backend::Backend;
 use crate::compact::system_supports_compression;
@@ -140,7 +135,10 @@ impl<T> GuiWrapper<T> {
     pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
         let (tx, rx) = bounded::<WVResult<Option<PathBuf>>>(1);
         let _ = self.0.dispatch(move |wv| {
-            let _ = tx.send(choose_folder(wv));
+            let _ = tx.send(wv.dialog().choose_directory(
+                "Select Directory",
+                known_folder(&knownfolders::FOLDERID_ProgramFiles).expect("Program files path"),
+            ));
             Ok(())
         });
 
@@ -309,37 +307,4 @@ fn set_dpi_aware() {
     use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE};
 
     unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) };
-}
-
-fn program_files() -> PathBuf {
-    known_folder(&knownfolders::FOLDERID_ProgramFiles).expect("Program files path")
-}
-
-use lazy_static::lazy_static;
-use std::sync::Mutex;
-
-lazy_static! {
-    static ref LAST_FILE: Mutex<Option<PathBuf>> = Mutex::new(None);
-}
-
-// WebView has an irritatingly stupid bug here, failing to initialize variables
-// causing the dialog to fail to open and this to return None depending on the
-// random junk on the stack. (#214)
-//
-// The message loop seems to be broken on Windows too (#220, #221).
-//
-// Sadly nobody seems interested in merging these.  For now, use a locally modified
-// copy.
-fn choose_folder<T>(webview: &mut web_view::WebView<'_, T>) -> WVResult<Option<PathBuf>> {
-    let mut last = LAST_FILE.lock().unwrap();
-    if let Some(path) = webview.dialog().choose_directory(
-        "Select Directory",
-        last.clone().unwrap_or_else(program_files),
-    )? {
-        last.replace(path.clone());
-
-        Ok(Some(path))
-    } else {
-        Ok(None)
-    }
 }
