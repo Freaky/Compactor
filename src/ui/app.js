@@ -201,7 +201,7 @@ var Response = (function() {
 	return {
 		dispatch: function(msg) {
 			switch(msg.type) {
-				case "SettingsReset":
+				case "Settings":
 					Gui.set_decimal(msg.decimal);
 					Gui.set_compression(msg.compression);
 					Gui.set_excludes(msg.excludes);

@@ -48,7 +48,7 @@ pub enum GuiResponse {
         date: String,
         version: String,
     },
-    SettingsReset {
+    Settings {
         decimal: bool,
         compression: String,
         excludes: String,
@@ -76,13 +76,16 @@ impl<T> GuiWrapper<T> {
     pub fn new(handle: Handle<T>) -> Self {
         let gui = Self(handle);
         gui.version();
+        gui.settings();
         gui
     }
 
     pub fn send(&self, msg: &GuiResponse) {
         let js = format!(
-            "Response.dispatch({})",
-            serde_json::to_string(msg).expect("serialize")
+            "Response.dispatch(JSON.parse({}))",
+            serde_json::to_string(msg)
+                .and_then(|s| serde_json::to_string(&s))
+                .expect("serialize")
         );
         self.0.dispatch(move |wv| wv.eval(&js)).ok(); // let errors bubble through via messages
     }
@@ -93,6 +96,15 @@ impl<T> GuiWrapper<T> {
             version: format!("{}-{}", env!("VERGEN_SEMVER"), env!("VERGEN_SHA_SHORT")),
         };
         self.send(&version);
+    }
+
+    pub fn settings(&self) {
+        let s = settings::get();
+        self.send(&GuiResponse::Settings {
+            decimal: s.decimal,
+            compression: s.compression.to_string(),
+            excludes: s.excludes.join("\n"),
+        });
     }
 
     pub fn summary(&self, info: FolderSummary) {
@@ -178,7 +190,7 @@ pub fn spawn_gui() {
         .invoke_handler(move |mut webview, arg| {
             match serde_json::from_str::<GuiRequest>(arg) {
                 Ok(GuiRequest::OpenUrl { url }) => {
-                    open_url(url);
+                    let _ = open::that(url);
                 }
                 Ok(GuiRequest::SaveSettings {
                     decimal,
@@ -196,7 +208,7 @@ pub fn spawn_gui() {
                     } else {
                         message_dispatch(
                             &mut webview,
-                            &GuiResponse::SettingsReset {
+                            &GuiResponse::Settings {
                                 decimal: s.decimal,
                                 compression: s.compression.to_string(),
                                 excludes: s.excludes.join("\n"),
@@ -215,7 +227,7 @@ pub fn spawn_gui() {
 
                     message_dispatch(
                         &mut webview,
-                        &GuiResponse::SettingsReset {
+                        &GuiResponse::Settings {
                             decimal: s.decimal,
                             compression: s.compression.to_string(),
                             excludes: s.excludes.join("\n"),
@@ -238,16 +250,6 @@ pub fn spawn_gui() {
         .expect("WebView");
 
     persistence::load();
-    let s = settings::get();
-
-    message_dispatch(
-        &mut webview,
-        &GuiResponse::SettingsReset {
-            decimal: s.decimal,
-            compression: s.compression.to_string(),
-            excludes: s.excludes.join("\n"),
-        },
-    );
 
     if !system_supports_compression().unwrap_or_default() {
         webview
@@ -297,10 +299,6 @@ fn message_dispatch<T>(wv: &mut web_view::WebView<'_, T>, msg: &GuiResponse) {
     );
 
     wv.eval(&js).ok();
-}
-
-fn open_url<U: AsRef<str>>(url: U) {
-    let _ = open::that(url.as_ref());
 }
 
 fn set_dpi_aware() {
