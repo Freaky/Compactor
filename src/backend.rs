@@ -6,7 +6,6 @@ use std::time::Instant;
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
 
 use crate::background::BackgroundHandle;
-use crate::compact::Compression;
 use crate::compression::BackgroundCompactor;
 use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
