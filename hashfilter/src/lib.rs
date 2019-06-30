@@ -63,6 +63,10 @@ impl HashFilter {
             return Ok(());
         }
 
+        if let Some(dir) = self.path.as_ref().and_then(|p| p.parent()) {
+            std::fs::create_dir_all(dir)?;
+        }
+
         let mut file = OpenOptions::new()
             .write(true)
             .create(true)

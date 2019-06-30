@@ -84,24 +84,30 @@ impl Settings {
     }
 
     pub fn load(&mut self) {
-        if self.backing.is_none() {
-            return;
-        }
-
-        if let Ok(data) = std::fs::read(self.backing.as_ref().unwrap()) {
-            if let Ok(c) = serde_json::from_slice::<Config>(&data) {
-                self.set(c);
+        match &self.backing {
+            Some(path) => {
+                if let Ok(data) = std::fs::read(path) {
+                    if let Ok(c) = serde_json::from_slice::<Config>(&data) {
+                        self.set(c);
+                    }
+                }
             }
+            None => (),
         }
     }
 
-    pub fn save(&mut self) {
-        if self.backing.is_none() {
-            return;
-        }
+    pub fn save(&mut self) -> std::io::Result<()> {
+        match &self.backing {
+            Some(path) => {
+                if let Some(dir) = path.parent() {
+                    std::fs::create_dir_all(dir)?;
+                }
 
-        let data = serde_json::to_string_pretty(&self.config).expect("Serialize");
-        let _ = std::fs::write(self.backing.as_ref().unwrap(), &data);
+                let data = serde_json::to_string_pretty(&self.config).expect("Serialize");
+                std::fs::write(path, &data)
+            }
+            None => Ok(()),
+        }
     }
 
     pub fn set(&mut self, c: Config) {
