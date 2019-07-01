@@ -8,6 +8,10 @@ use filesize::file_real_size;
 use globset::GlobSet;
 use serde_derive::Serialize;
 use walkdir::WalkDir;
+use winapi::um::winnt::{
+    FILE_ATTRIBUTE_COMPRESSED, FILE_ATTRIBUTE_READONLY, FILE_ATTRIBUTE_SYSTEM,
+    FILE_ATTRIBUTE_TEMPORARY,
+};
 
 use crate::background::{Background, ControlToken};
 use crate::filesdb::FilesDb;
@@ -162,12 +166,6 @@ impl FolderScan {
     }
 }
 
-const FILE_ATTRIBUTE_READONLY: u32 = 1;
-const FILE_ATTRIBUTE_HIDDEN: u32 = 2;
-const FILE_ATTRIBUTE_SYSTEM: u32 = 4;
-const FILE_ATTRIBUTE_TEMPORARY: u32 = 256;
-const FILE_ATTRIBUTE_COMPRESSED: u32 = 2048;
-
 impl Background for FolderScan {
     type Output = Result<FolderInfo, FolderInfo>;
     type Status = (PathBuf, FolderSummary);
@@ -216,7 +214,10 @@ impl Background for FolderScan {
                 ds.push(FileKind::Compressed, fi);
             } else if fi.logical_size <= 4096
                 || metadata.file_attributes()
-                    & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY)
+                    & (FILE_ATTRIBUTE_READONLY
+                        | FILE_ATTRIBUTE_SYSTEM
+                        | FILE_ATTRIBUTE_TEMPORARY
+                        | FILE_ATTRIBUTE_COMPRESSED)
                     != 0
                 || incompressible.contains(entry.path())
                 || excludes.is_match(entry.path())
