@@ -14,7 +14,7 @@ use winapi::um::winnt::{
 };
 
 use crate::background::{Background, ControlToken};
-use crate::filesdb::FilesDb;
+use crate::persistence::pathdb;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FileInfo {
@@ -173,7 +173,8 @@ impl Background for FolderScan {
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
         let mut ds = FolderInfo::new(&self.path);
         let excludes = self.excludes.lock().expect("exclude lock");
-        let mut incompressible = FilesDb::borrow();
+        let incompressible = pathdb();
+        let mut incompressible = incompressible.write().unwrap();
         let _ = incompressible.load();
 
         let mut last_status = Instant::now();

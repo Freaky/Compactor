@@ -14,8 +14,8 @@ use winapi::um::knownfolders;
 use crate::backend::Backend;
 use crate::compact::system_supports_compression;
 use crate::folder::FolderSummary;
-use crate::persistence;
-use crate::settings::{self, Config};
+use crate::persistence::{self, config};
+use crate::config::Config;
 
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
@@ -99,7 +99,7 @@ impl<T> GuiWrapper<T> {
     }
 
     pub fn settings(&self) {
-        let s = settings::get();
+        let s = config().read().unwrap().current();;
         self.send(&GuiResponse::Settings {
             decimal: s.decimal,
             compression: s.compression.to_string(),
@@ -214,12 +214,15 @@ pub fn spawn_gui() {
                                 excludes: s.excludes.join("\n"),
                             },
                         );
-                        webview
-                            .dialog()
-                            .info("Settings Saved", "Settings Updated")
-                            .ok();
-                        settings::set(s);
-                        settings::save();
+                        let c = config();
+                        let mut c = c.write().unwrap();
+                        c.replace(s);
+                        if let Err(e) = c.save() {
+                            webview
+                                .dialog()
+                                .error("Settings Error", format!("Error saving settings: {:?}", e))
+                                .ok();
+                        }
                     }
                 }
                 Ok(GuiRequest::ResetSettings) => {
@@ -233,8 +236,15 @@ pub fn spawn_gui() {
                             excludes: s.excludes.join("\n"),
                         },
                     );
-                    settings::set(s);
-                    settings::save();
+                    let c = config();
+                    let mut c = c.write().unwrap();
+                    c.replace(s);
+                    if let Err(e) = c.save() {
+                        webview
+                            .dialog()
+                            .error("Settings Error", format!("Error saving settings: {:?}", e))
+                            .ok();
+                    }
                 }
                 Ok(msg) => {
                     from_gui.send(msg).expect("GUI message queue");
@@ -249,7 +259,7 @@ pub fn spawn_gui() {
         .build()
         .expect("WebView");
 
-    persistence::load();
+    persistence::init();
 
     if !system_supports_compression().unwrap_or_default() {
         webview

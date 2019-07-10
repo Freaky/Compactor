@@ -1,15 +1,13 @@
-use std::path::Path;
-use std::path::PathBuf;
-use std::sync::Mutex;
+use std::io;
+use std::path::{Path, PathBuf};
 
 use globset::{Glob, GlobSet, GlobSetBuilder};
-use lazy_static::lazy_static;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::compact::Compression;
 
 #[derive(Debug, Default)]
-pub struct Settings {
+pub struct ConfigFile {
     backing: Option<PathBuf>,
     config: Config,
 }
@@ -78,25 +76,20 @@ impl Default for Config {
     }
 }
 
-impl Settings {
-    pub fn set_backing<P: AsRef<Path>>(&mut self, p: P) {
-        self.backing = Some(p.as_ref().to_owned());
-    }
-
-    pub fn load(&mut self) {
-        match &self.backing {
-            Some(path) => {
-                if let Ok(data) = std::fs::read(path) {
-                    if let Ok(c) = serde_json::from_slice::<Config>(&data) {
-                        self.set(c);
-                    }
-                }
-            }
-            None => (),
+impl ConfigFile {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            backing: Some(path.as_ref().to_owned()),
+            config: std::fs::read(path)
+                .and_then(|data| {
+                    serde_json::from_slice::<Config>(&data)
+                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+                })
+                .unwrap_or_default(),
         }
     }
 
-    pub fn save(&mut self) -> std::io::Result<()> {
+    pub fn save(&self) -> io::Result<()> {
         match &self.backing {
             Some(path) => {
                 if let Some(dir) = path.parent() {
@@ -110,12 +103,12 @@ impl Settings {
         }
     }
 
-    pub fn set(&mut self, c: Config) {
-        self.config = c;
+    pub fn current(&self) -> Config {
+        self.config.clone()
     }
 
-    pub fn get(&self) -> Config {
-        self.config.clone()
+    pub fn replace(&mut self, c: Config) {
+        self.config = c;
     }
 }
 
@@ -129,30 +122,8 @@ impl Config {
     }
 }
 
-lazy_static! {
-    static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
-}
-
-pub fn get() -> Config {
-    SETTINGS.lock().expect("Settings").get()
-}
-
-pub fn set(s: Config) {
-    SETTINGS.lock().expect("Settings").set(s);
-}
-
-pub fn load<P: AsRef<Path>>(p: P) {
-    let mut s = SETTINGS.lock().unwrap();
-    s.set_backing(p);
-    s.load();
-}
-
-pub fn save() {
-    SETTINGS.lock().unwrap().save();
-}
-
 #[test]
-fn test_settings() {
+fn test_config() {
     let s = Config::default();
 
     assert!(s.globset().is_ok());

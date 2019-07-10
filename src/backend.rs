@@ -7,10 +7,9 @@ use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
 
 use crate::background::BackgroundHandle;
 use crate::compression::BackgroundCompactor;
-use crate::filesdb::FilesDb;
 use crate::folder::{FileKind, FolderInfo, FolderScan};
 use crate::gui::{GuiRequest, GuiWrapper};
-use crate::settings;
+use crate::persistence::{config, pathdb};
 
 pub struct Backend<T> {
     gui: GuiWrapper<T>,
@@ -78,9 +77,9 @@ impl<T> Backend<T> {
     }
 
     fn scan_loop(&mut self, path: PathBuf) {
-        let settings = settings::get();
+        let excludes = config().read().unwrap().current().globset().expect("globs");
 
-        let scanner = FolderScan::new(path, settings.globset().expect("globs"));
+        let scanner = FolderScan::new(path, excludes);
         let task = BackgroundHandle::spawn(scanner);
         let start = Instant::now();
 
@@ -143,7 +142,7 @@ impl<T> Backend<T> {
         let (send_file, send_file_rx) = bounded::<Option<(PathBuf, u64)>>(1);
         let (recv_result_tx, recv_result) = bounded::<(PathBuf, io::Result<bool>)>(1);
 
-        let compression = Some(settings::get().compression);
+        let compression = Some(config().read().unwrap().current().compression);
         let compactor = BackgroundCompactor::new(compression, send_file_rx, recv_result_tx);
         let task = BackgroundHandle::spawn(compactor);
         let start = Instant::now();
@@ -160,7 +159,8 @@ impl<T> Backend<T> {
         let old_size = folder.physical_size;
         let compressible_size = folder.summary().compressible.physical_size;
 
-        let mut incompressible = FilesDb::borrow();
+        let incompressible = pathdb();
+        let mut incompressible = incompressible.write().unwrap();
         let _ = incompressible.load();
 
         self.gui.compacting();
@@ -303,13 +303,13 @@ impl<T> Backend<T> {
         let _ = incompressible.save();
 
         let new_size = folder.physical_size;
-        let s = settings::get();
+        let decimal = config().read().unwrap().current().decimal;
 
         let msg = format!(
             "Compacted {} in {} files, saving {} in {:.2?}",
-            format_size(compressible_size, s.decimal),
+            format_size(compressible_size, decimal),
             done,
-            format_size(old_size - new_size, s.decimal),
+            format_size(old_size - new_size, decimal),
             start.elapsed()
         );
 
@@ -459,7 +459,10 @@ impl<T> Backend<T> {
         let msg = format!(
             "Expanded {} files wasting {} in {:.2?}",
             done,
-            format_size(new_size - old_size, settings::get().decimal),
+            format_size(
+                new_size - old_size,
+                config().read().unwrap().current().decimal
+            ),
             start.elapsed()
         );
 

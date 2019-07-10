@@ -373,5 +373,9 @@ fn compact_works_i_guess() {
         uncompress_file(&path).expect("uncompress_file");
         assert_eq!(None, detect_compression(&path).expect("detect_compression"));
         compress_file(&path, Compression::default()).expect("compress_file");
+        assert_eq!(
+            Some(Compression::default()),
+            detect_compression(&path).expect("detect_compression")
+        );
     }
 }
