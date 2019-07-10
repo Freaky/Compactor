@@ -159,10 +159,10 @@ impl<T> GuiWrapper<T> {
 }
 
 pub fn spawn_gui() {
-    let signalled = Arc::new(AtomicBool::new(false));
-    let r = signalled.clone();
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
     ctrlc::set_handler(move || {
-        r.store(true, Ordering::SeqCst);
+        r.store(false, Ordering::SeqCst);
     })
     .expect("Error setting Ctrl-C handler");
 
@@ -281,23 +281,19 @@ pub fn spawn_gui() {
         backend.run();
     });
 
-    loop {
-        if signalled.load(Ordering::SeqCst) {
-            webview.into_inner();
-            break;
-        }
-
+    while running.load(Ordering::SeqCst) {
         match webview.step() {
             Some(Ok(_)) => (),
             Some(e) => {
                 eprintln!("Error: {:?}", e);
             }
             None => {
-                webview.into_inner();
                 break;
             }
         }
     }
+
+    webview.into_inner();
 
     bg.join().expect("background thread");
 }
