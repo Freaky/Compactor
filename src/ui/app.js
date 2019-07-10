@@ -151,13 +151,13 @@ var Action = (function() {
 			external.invoke(JSON.stringify({ type: 'OpenUrl', url: url }));
 		},
 
-		reset_settings: function() {
-			external.invoke(JSON.stringify({ type: 'ResetSettings' }));
+		reset_config: function() {
+			external.invoke(JSON.stringify({ type: 'ResetConfig' }));
 		},
 
-		save_settings: function(settings) {
-			settings.type = 'SaveSettings';
-			external.invoke(JSON.stringify(settings));
+		save_config: function(config) {
+			config.type = 'SaveConfig';
+			external.invoke(JSON.stringify(config));
 		},
 
 		choose_folder: function() {
@@ -201,7 +201,7 @@ var Response = (function() {
 	return {
 		dispatch: function(msg) {
 			switch(msg.type) {
-				case "Settings":
+				case "Config":
 					Gui.set_decimal(msg.decimal);
 					Gui.set_compression(msg.compression);
 					Gui.set_excludes(msg.excludes);
@@ -248,7 +248,7 @@ var Gui = (function() {
 			});
 
 			$("#Button_Save").on("click", function() {
-				Action.save_settings({
+				Action.save_config({
 				  decimal: $("#SI_Units").val() == "D",
 					compression: $("#Compression_Mode").val(),
 					excludes: $("#Excludes").val()
@@ -256,7 +256,7 @@ var Gui = (function() {
 			});
 
 			$("#Button_Reset").on("click", function() {
-				Action.reset_settings();
+				Action.reset_config();
 			});
 		},
 

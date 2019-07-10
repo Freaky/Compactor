@@ -24,12 +24,12 @@ pub enum GuiRequest {
     OpenUrl {
         url: String,
     },
-    SaveSettings {
+    SaveConfig {
         decimal: bool,
         compression: String,
         excludes: String,
     },
-    ResetSettings,
+    ResetConfig,
     ChooseFolder,
     Compress,
     Decompress,
@@ -48,7 +48,7 @@ pub enum GuiResponse {
         date: String,
         version: String,
     },
-    Settings {
+    Config {
         decimal: bool,
         compression: String,
         excludes: String,
@@ -76,7 +76,7 @@ impl<T> GuiWrapper<T> {
     pub fn new(handle: Handle<T>) -> Self {
         let gui = Self(handle);
         gui.version();
-        gui.settings();
+        gui.config();
         gui
     }
 
@@ -98,9 +98,9 @@ impl<T> GuiWrapper<T> {
         self.send(&version);
     }
 
-    pub fn settings(&self) {
+    pub fn config(&self) {
         let s = config().read().unwrap().current();;
-        self.send(&GuiResponse::Settings {
+        self.send(&GuiResponse::Config {
             decimal: s.decimal,
             compression: s.compression.to_string(),
             excludes: s.excludes.join("\n"),
@@ -192,7 +192,7 @@ pub fn spawn_gui() {
                 Ok(GuiRequest::OpenUrl { url }) => {
                     let _ = open::that(url);
                 }
-                Ok(GuiRequest::SaveSettings {
+                Ok(GuiRequest::SaveConfig {
                     decimal,
                     compression,
                     excludes,
@@ -208,7 +208,7 @@ pub fn spawn_gui() {
                     } else {
                         message_dispatch(
                             &mut webview,
-                            &GuiResponse::Settings {
+                            &GuiResponse::Config {
                                 decimal: s.decimal,
                                 compression: s.compression.to_string(),
                                 excludes: s.excludes.join("\n"),
@@ -225,12 +225,12 @@ pub fn spawn_gui() {
                         }
                     }
                 }
-                Ok(GuiRequest::ResetSettings) => {
+                Ok(GuiRequest::ResetConfig) => {
                     let s = Config::default();
 
                     message_dispatch(
                         &mut webview,
-                        &GuiResponse::Settings {
+                        &GuiResponse::Config {
                             decimal: s.decimal,
                             compression: s.compression.to_string(),
                             excludes: s.excludes.join("\n"),
