@@ -104,6 +104,7 @@ These may or may not happen, but have been on my mind.
 
 * [`compact.exe`] is a command-line tool that ships with Windows 10.  If you're familiar with the command line and batch files, maybe you'd prefer that. Weirdo.
 * [CompactGUI] is a popular Visual Basic program that shells out to `compact.exe` to do its work, instead of using the Windows API directly as Compactor does.  It has some... performance issues, particularly with larger folders.
+* NTFS has supported [LZNT1 compression][lznt1] since 1995, hidden behind a checkbox under `Properties` &rarr; `Advanced Attributes`.  It's less flexible and has a reputation for poor performance, but is more set-it-and-forget-it.
 
 Are you aware of any others?  Do let me know.
 
@@ -144,3 +145,4 @@ You can find him on Twitter at [@blaagh], or bug him on IRC as `Freaky` on FreeN
 [@blaagh]: https://twitter.com/blaagh
 [overlapped IO]: https://docs.microsoft.com/en-us/windows/desktop/sync/synchronization-and-overlapped-input-and-output
 [compresstimator]: https://github.com/Freaky/compresstimator
+[lznt1]: https://en.wikipedia.org/wiki/NTFS#File_compression
