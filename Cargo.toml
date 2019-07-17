@@ -1,6 +1,6 @@
 [package]
 name = "compactor"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Thomas Hurst <tom@hur.st>"]
 homepage = "https://github.com/Freaky/Compactor"
 description = "An interface to Windows 10 filesystem compression"
