@@ -89,16 +89,19 @@ If a game uses large files and in-place binary patching for updates, it might be
 
 ## Future
 
-These may or may not happen, but have been on my mind.
+In the fairly-concrete TODO:
 
-* Double-check the default exclusions list.  Should be able to do something with the compresstimation code to verify them.
-* Examine [overlapped IO], see if we can get more information and control out of the compression process (per-file progress and cancellation).
+* Hook up an interface to the saved paths database (count, option to clear it).
 * Recompression, for changing compression modes without manually decompressing/recompressing.
+* Installer.  Why does this involve so much XML oh god.
+* Sign the binaries/installer.  If I give away my code I get a free one, right?
+* Double-check the default exclusions list.  Should be able to do something with the compresstimation code to verify them.
+
+More tentative:
+
 * Scheduled task or a background service to periodically recompress selected directories.
 * Write bindings to Microsoft's [Compression API], add benchmarks for the various compression modes to help users decide which is most appropriate for their system.
-* Less rubbish installer.  Why does this involve so much XML oh god.
-* Sign the binaries/installer.  If I give away my code I get a free one, right?
-
+* Examine [overlapped IO], see if we can get more information and control out of the compression process (per-file progress and cancellation).
 
 ## Alternatives
 
@@ -117,7 +120,7 @@ Under the hood it uses [`DeviceIoControl`] with [`FSCTL_SET_EXTERNAL_BACKING`] a
 
 Compresstimation uses a simple linear sampling algorithm, passing blocks through LZ4 level 1 as a compressibility check and averaging across the entire file.  The code is [available on Github][compresstimator].
 
-The incompressible-files database is simply an append-only list of SipHash128 path hashes.  It should be safe to share between multiple instances if you want to compress different drives at the same time.  It lives in your `%APPDIR%` Roaming folder under `Freaky\Compactor`.
+The incompressible-files database is simply an append-only list of SipHash128 path hashes.  It should be safe to share between multiple instances if you want to compress different drives at the same time.  It lives in `%APPDATA%\Local\Freaky\Compactor`.
 
 
 ## Author
