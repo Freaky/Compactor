@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "backtrace 0.3.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "compresstimator 0.1.0 (git+https://github.com/Freaky/compresstimator.git?rev=26ddd3f499bc46f2c8b3ce814e9723ed41b47919)",
@@ -148,7 +148,7 @@ dependencies = [
  "tempdir 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "walkdir 2.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "web-view 0.4.1 (git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5)",
+ "web-view 0.4.1 (git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "winres 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -709,17 +709,17 @@ dependencies = [
 [[package]]
 name = "web-view"
 version = "0.4.1"
-source = "git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5#87a108fba963e701dc71a16d2f60ac54d96a09b5"
+source = "git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9#ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9"
 dependencies = [
  "boxfnonce 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "urlencoding 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "webview-sys 0.1.2 (git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5)",
+ "webview-sys 0.1.2 (git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9)",
 ]
 
 [[package]]
 name = "webview-sys"
 version = "0.1.2"
-source = "git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5#87a108fba963e701dc71a16d2f60ac54d96a09b5"
+source = "git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9#ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9"
 dependencies = [
  "bitflags 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cc 1.0.37 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -848,8 +848,8 @@ dependencies = [
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 "checksum void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 "checksum walkdir 2.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "c7904a7e2bb3cdf0cf5e783f44204a85a37a93151738fa349f06680f59a98b45"
-"checksum web-view 0.4.1 (git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5)" = "<none>"
-"checksum webview-sys 0.1.2 (git+https://github.com/Freaky/web-view.git?rev=87a108fba963e701dc71a16d2f60ac54d96a09b5)" = "<none>"
+"checksum web-view 0.4.1 (git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9)" = "<none>"
+"checksum webview-sys 0.1.2 (git+https://github.com/Freaky/web-view.git?rev=ef1a967dbfad6ba24c54e3eedd16f3a2d533bac9)" = "<none>"
 "checksum winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)" = "f10e386af2b13e47c89e7236a7a14a086791a2b88ebad6df9bf42040195cf770"
 "checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
 "checksum winapi-util 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7168bab6e1daee33b4557efd0e95d5ca70a03706d39fa5f3fe7a236f584b03c9"
