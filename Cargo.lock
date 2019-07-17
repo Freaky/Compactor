@@ -127,6 +127,7 @@ dependencies = [
 name = "compactor"
 version = "0.7.0"
 dependencies = [
+ "backtrace 0.3.32 (registry+https://github.com/rust-lang/crates.io-index)",
  "compresstimator 0.1.0 (git+https://github.com/Freaky/compresstimator.git?rev=26ddd3f499bc46f2c8b3ce814e9723ed41b47919)",
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",

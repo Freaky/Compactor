@@ -2,6 +2,7 @@
 name = "compactor"
 version = "0.7.0"
 authors = ["Thomas Hurst <tom@hur.st>"]
+homepage = "https://github.com/Freaky/Compactor"
 description = "An interface to Windows 10 filesystem compression"
 edition = "2018"
 license = "MIT"
@@ -27,6 +28,7 @@ siphasher = "0.3.0"
 walkdir = "2.2.8"
 web-view = { path = "../web-view/" }
 winapi = { version = "0.3.7", features = [ "combaseapi", "ioapiset", "knownfolders", "shellscalingapi", "shlobj", "shtypes", "winbase", "winerror", "winioctl", "winver"] }
+backtrace = "0.3.32"
 
 [[bin]]
 name = "Compactor"
@@ -39,6 +41,7 @@ winres = "0.1"
 [profile.release]
 opt-level = "s"
 lto = true
+codegen-units = 1
 debug = false
 
 [dev-dependencies]
