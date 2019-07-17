@@ -3,6 +3,7 @@ name = "hashfilter"
 version = "0.1.0"
 authors = ["Thomas Hurst <tom@hur.st>"]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 fs2 = "0.4.3"
