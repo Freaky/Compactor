@@ -86,12 +86,14 @@ This generally doesn't matter much for application folders, but it's not great f
 
 If a game uses large files and in-place binary patching for updates, it might be worth adding to the exclusions list.
 
+
 ## Future
 
 These may or may not happen, but have been on my mind.
 
 * Double-check the default exclusions list.  Should be able to do something with the compresstimation code to verify them.
 * Examine [overlapped IO], see if we can get more information and control out of the compression process (per-file progress and cancellation).
+* Recompression, for changing compression modes without manually decompressing/recompressing.
 * Scheduled task or a background service to periodically recompress selected directories.
 * Write bindings to Microsoft's [Compression API], add benchmarks for the various compression modes to help users decide which is most appropriate for their system.
 * Less rubbish installer.  Why does this involve so much XML oh god.
