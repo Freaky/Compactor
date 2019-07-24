@@ -10,23 +10,16 @@ Compactor is here to plug that gap, with a simple GUI utility anyone can use.
 
 ![](https://i.imgur.com/A9si8Zh.png)
 
-The results are quite nice:
+## Installation [![v0.7.1](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.7.1) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
 
-| Program | Size | Compacted | Ratio |
-|-|-:|-:|-|
-| AI War 2 | 2.43 GiB | 1.42 GiB  | 0.59x |
-| Big Pharma | 1.1 GiB | 711 MiB | 0.37x |
-| Crusader Kings 2 | 2.19 GiB | 1.29 GiB | 0.59x |
-| Deus Ex MD | 41.31 GiB | 28.06 GiB | 0.68x |
-| Infinifactory | 1.71 GiB | 742 MiB | 0.58x |
-| Satisfactory | 15.82 GiB | 10.45 GiB | 0.66x |
-| Space Engineers | 16.28 GiB | 9.4 GiB | 0.58x |
-| Stellaris | 7.76 GiB | 5.21 GiB | 0.67x |
-| Subnautica BZ | 10.62 GiB | 6.40 GiB | 0.60x |
-| The Long Dark | 7.42 GiB | 5.64 GiB | 0.76x |
-| Microsoft SDKs | 5.91 GiB | 2.45 GiB | 0.41x |
-| Visual Studio 2017 | 9.63 GiB | 4.77 GiB | 0.50x |
-| Windows Kits | 5.38 GiB | 2.03 GiB | 0.38x |
+Downloads are available from the [Github Releases](https://github.com/Freaky/Compactor/releases) page under *Assets*, or you can use these direct links:
+
+* [v0.7.1 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.7.1/Compactor-0.7.1-i686.zip)
+* [v0.7.1 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.7.1/Compactor-0.7.1.zip)
+
+If you get "*Windows protected your PC*" trying to run it, it's just [SmartScreen](https://www.pcworld.com/article/3197443/how-to-get-past-windows-defender-smartscreen-in-windows-10.html) upset the binaries aren't (yet) signed.  Click "*More info*" and "*Run anyway*" if you judge things to be above-board.
+
+Note this is beta software and comes with no warranty.
 
 ## Features
 
@@ -86,6 +79,28 @@ This generally doesn't matter much for application folders, but it's not great f
 
 If a game uses large files and in-place binary patching for updates, it might be worth adding to the exclusions list.
 
+## Compression Results
+
+A totally-not-cherry-picked sample of compression results with the default settings:
+
+| Program | Size | Compacted | Ratio |
+|-|-:|-:|-|
+| AI War 2 | 2.43 GiB | 1.42 GiB  | 0.59x |
+| Big Pharma | 1.1 GiB | 711 MiB | 0.37x |
+| Crusader Kings 2 | 2.19 GiB | 1.29 GiB | 0.59x |
+| Deus Ex MD | 41.31 GiB | 28.06 GiB | 0.68x |
+| Infinifactory | 1.71 GiB | 742 MiB | 0.58x |
+| Satisfactory | 15.82 GiB | 10.45 GiB | 0.66x |
+| Space Engineers | 16.28 GiB | 9.4 GiB | 0.58x |
+| Stellaris | 7.76 GiB | 5.21 GiB | 0.67x |
+| Subnautica BZ | 10.62 GiB | 6.40 GiB | 0.60x |
+| The Long Dark | 7.42 GiB | 5.64 GiB | 0.76x |
+| Microsoft SDKs | 5.91 GiB | 2.45 GiB | 0.41x |
+| Visual Studio 2017 | 9.63 GiB | 4.77 GiB | 0.50x |
+| Windows Kits | 5.38 GiB | 2.03 GiB | 0.38x |
+
+A more comprehensive database of results is [maintained by the CompactGUI project](https://docs.google.com/spreadsheets/d/14CVXd6PTIYE9XlNpRsxJUGaoUzhC5titIC1rzQHI4yI/edit#gid=0).
+
 
 ## Future
 
@@ -111,7 +126,6 @@ More tentative:
 
 Are you aware of any others?  Do let me know.
 
-
 ## Nerdy Technical Stuff
 
 Compactor is primarily written in [Rust].  The front-end is basically an embedded website driven by the [web-view] crate and my own fork of the underlying [webview] library.  It does *not* depend on any remote resources or open any ports.
@@ -122,7 +136,6 @@ Compresstimation uses a simple linear sampling algorithm, passing blocks through
 
 The incompressible-files database is simply an append-only list of SipHash128 path hashes.  It should be safe to share between multiple instances if you want to compress different drives at the same time.  It lives in `%APPDATA%\Local\Freaky\Compactor`.
 
-
 ## Author
 
 Compactor is written by [Thomas Hurst], a nerdy, aloof weirdo from the north-east of England, and a programmer for about 25 years.
@@ -130,7 +143,6 @@ Compactor is written by [Thomas Hurst], a nerdy, aloof weirdo from the north-eas
 He mostly works with FreeBSD and focuses on Unix platforms, but uses Windows because he plays games instead of having a social life.
 
 You can find him on Twitter at [@blaagh], or bug him on IRC as `Freaky` on FreeNode.
-
 
 [`compact.exe`]: https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact
 [Rust]: https://www.rust-lang.org/
