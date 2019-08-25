@@ -25,11 +25,14 @@ impl Default for Config {
             decimal: false,
             compression: Compression::default(),
             excludes: vec![
-                "*:\\Windows\\*",
+                "*:\\Windows*",
+                "*:\\System Volume Information*",
+                "*:\\$*",
                 "*.7z",
                 "*.aac",
                 "*.avi",
                 "*.ba",
+                "*.{bik,bk2,bnk,pc_binkvid}",
                 "*.br",
                 "*.bz2",
                 "*.cab",
@@ -46,6 +49,7 @@ impl Default for Config {
                 "*.lzma",
                 "*.lzx",
                 "*.m[24]v",
+                "*.m4a",
                 "*.mkv",
                 "*.mp[234]",
                 "*.mpeg",
@@ -67,7 +71,6 @@ impl Default for Config {
                 "*.xz",
                 "*.zst",
                 "*.zstd",
-                "*.{bik,bk2,bnk,pc_binkvid}",
             ]
             .into_iter()
             .map(String::from)

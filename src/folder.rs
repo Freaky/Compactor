@@ -179,11 +179,19 @@ impl Background for FolderScan {
 
         let mut last_status = Instant::now();
 
+        // 1. Handle excludes separately for directories to allow pruning, while
+        //    still recording accurate sizes for files.
+        // 2. Ignore errors - consider recording them somewhere in future.
+        // 3. Only process files.
+        // 4. Grab metadata - should be infallible on Windows, it comes with the
+        //    DirEntry.
+        // 5. GetCompressedFileSizeW() or skip.
         let walker = WalkDir::new(&self.path)
             .into_iter()
+            .filter_entry(|e| e.file_type().is_file() || !excludes.is_match(e.path()))
             .filter_map(|e| e.map_err(|e| eprintln!("Error: {:?}", e)).ok())
+            .filter(|e| e.file_type().is_file())
             .filter_map(|e| e.metadata().map(|md| (e, md)).ok())
-            .filter(|(_, md)| md.is_file())
             .filter_map(|(e, md)| file_real_size(e.path()).map(|s| (e, md, s)).ok())
             .enumerate();
 
