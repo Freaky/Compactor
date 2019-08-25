@@ -1,4 +1,5 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
+#![cfg_attr(test, windows_subsystem = "console")]
 #![allow(non_snake_case)]
 
 mod backend;
