@@ -58,7 +58,7 @@ impl<S> ControlToken<S> {
 
         while self.is_paused() && !self.is_cancelled() {
             paused = true;
-            thread::park_timeout(Duration::from_millis(10));
+            thread::park();
         }
 
         paused
@@ -92,6 +92,7 @@ impl<S> Default for ControlToken<S> {
 pub struct BackgroundHandle<T, S> {
     result: Receiver<std::thread::Result<T>>,
     control: ControlToken<S>,
+    thread: thread::Thread,
 }
 
 impl<T, S> BackgroundHandle<T, S> {
@@ -105,14 +106,17 @@ impl<T, S> BackgroundHandle<T, S> {
         let control = ControlToken::new();
         let inner_control = control.clone();
 
-        thread::spawn(move || {
+        let handle = thread::spawn(move || {
             let response = catch_unwind(|| task.run(&inner_control));
             let _ = tx.send(response);
         });
 
+        let thread = handle.thread().clone();
+
         BackgroundHandle {
             result: rx,
             control,
+            thread,
         }
     }
 
@@ -141,6 +145,7 @@ impl<T, S> BackgroundHandle<T, S> {
 
     pub fn cancel(&self) {
         self.control.cancel();
+        self.thread.unpark();
     }
 
     pub fn is_cancelled(&self) -> bool {
@@ -157,6 +162,7 @@ impl<T, S> BackgroundHandle<T, S> {
 
     pub fn resume(&self) {
         self.control.resume();
+        self.thread.unpark();
     }
 
     pub fn is_paused(&self) -> bool {
