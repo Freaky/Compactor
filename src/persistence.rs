@@ -1,13 +1,13 @@
 use directories::ProjectDirs;
 use hashfilter::HashFilter;
 use lazy_static::lazy_static;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 use crate::config::ConfigFile;
 
 lazy_static! {
-    static ref PATHDB: Arc<RwLock<HashFilter>> = Arc::new(RwLock::new(HashFilter::default()));
-    static ref CONFIG: Arc<RwLock<ConfigFile>> = Arc::new(RwLock::new(ConfigFile::default()));
+    static ref PATHDB: RwLock<HashFilter> = RwLock::new(HashFilter::default());
+    static ref CONFIG: RwLock<ConfigFile> = RwLock::new(ConfigFile::default());
 }
 
 pub fn init() {
@@ -20,10 +20,10 @@ pub fn init() {
     }
 }
 
-pub fn config() -> Arc<RwLock<ConfigFile>> {
-    CONFIG.clone()
+pub fn config() -> &'static RwLock<ConfigFile> {
+    &CONFIG
 }
 
-pub fn pathdb() -> Arc<RwLock<HashFilter>> {
-    PATHDB.clone()
+pub fn pathdb() -> &'static RwLock<HashFilter> {
+    &PATHDB
 }
