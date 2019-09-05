@@ -27,7 +27,7 @@ serde_derive = "1.0"
 serde_json = "1.0"
 siphasher = "0.3.0"
 walkdir = "2.2.8"
-web-view = { git = "https://github.com/Freaky/web-view.git", branch = "alternate-upstream" }
+web-view = "0.4.3"
 winapi = { version = "0.3.7", features = [ "combaseapi", "ioapiset", "knownfolders", "shellscalingapi", "shlobj", "shtypes", "winbase", "winerror", "winioctl", "winver"] }
 
 [[bin]]
