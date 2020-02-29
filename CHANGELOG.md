@@ -19,6 +19,7 @@
  - Initial release
 
 [0.7.1]: https://github.com/Freaky/Compactor/releases/tag/v0.7.1
+[0.8.0]: https://github.com/Freaky/Compactor/releases/tag/v0.8.0
 
 [#11]: https://github.com/Freaky/Compactor/pull/11
 [#10]: https://github.com/Freaky/Compactor/pull/10

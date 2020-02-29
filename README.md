@@ -10,12 +10,12 @@ Compactor is here to plug that gap, with a simple GUI utility anyone can use.
 
 ![](https://i.imgur.com/A9si8Zh.png)
 
-## Installation [![v0.7.1](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.7.1) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
+## Installation [![v0.8.0](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.8.0) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
 
 Downloads are available from the [Github Releases](https://github.com/Freaky/Compactor/releases) page under *Assets*, or you can use these direct links:
 
-* [v0.7.1 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.7.1/Compactor-0.7.1-i686.zip)
-* [v0.7.1 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.7.1/Compactor-0.7.1.zip)
+* [v0.8.0 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.8.0/Compactor-0.8.0-i686.zip)
+* [v0.8.0 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.8.0/Compactor-0.8.0.zip)
 
 If you get "*Windows protected your PC*" trying to run it, it's just [SmartScreen](https://www.pcworld.com/article/3197443/how-to-get-past-windows-defender-smartscreen-in-windows-10.html) upset the binaries aren't (yet) signed.  Click "*More info*" and "*Run anyway*" if you judge things to be above-board.
 
