@@ -1,4 +1,3 @@
-
 // Helper functions for handling the Windows console from a GUI context.
 //
 // Windows subsystem applications must explicitly attach to an existing console
@@ -8,14 +7,12 @@
 // These functions enable that, primarily for the purposes of displaying Rust
 // panics.
 
-use winapi::um::consoleapi::{AllocConsole};
+use winapi::um::consoleapi::AllocConsole;
 use winapi::um::wincon::{AttachConsole, FreeConsole, GetConsoleWindow, ATTACH_PARENT_PROCESS};
 
 /// Check if we're attached to an existing Windows console
 pub fn is_attached() -> bool {
-    unsafe {
-        !GetConsoleWindow().is_null()
-    }
+    unsafe { !GetConsoleWindow().is_null() }
 }
 
 /// Try to attach to an existing Windows console, if necessary.

@@ -4,10 +4,10 @@
 
 mod backend;
 mod background;
-mod console;
 mod compact;
 mod compression;
 mod config;
+mod console;
 mod folder;
 mod gui;
 mod persistence;
@@ -19,7 +19,8 @@ fn setup_panic() {
             return;
         }
 
-        println!(r#"
+        println!(
+            r#"
 Oh dear, {app} has crashed.  Sorry :(
 
 You can report this on the website at {website}/issues
@@ -30,13 +31,18 @@ you were doing - like what folder you were running it on.
 #############################################################################
 
 App: {app}, Version: {ver}, Build Date: {date}, Hash: {hash}
-"#, app = env!("CARGO_PKG_NAME"), website = env!("CARGO_PKG_HOMEPAGE"),
-ver = env!("VERGEN_SEMVER"), date = env!("VERGEN_BUILD_DATE").to_string(), hash = env!("VERGEN_SHA_SHORT"));
+"#,
+            app = env!("CARGO_PKG_NAME"),
+            website = env!("CARGO_PKG_HOMEPAGE"),
+            ver = env!("VERGEN_SEMVER"),
+            date = env!("VERGEN_BUILD_DATE").to_string(),
+            hash = env!("VERGEN_SHA_SHORT")
+        );
 
         if let Some(s) = e.payload().downcast_ref::<&'static str>() {
-             println!("panic: {}", s);
+            println!("panic: {}", s);
         } else {
-             println!("panic: [mysteriously lacks a string representation]");
+            println!("panic: [mysteriously lacks a string representation]");
         }
 
         println!("\nHit Enter to print the rest of the debug info.");
