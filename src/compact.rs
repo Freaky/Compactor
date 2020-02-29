@@ -76,7 +76,7 @@ impl Default for _FILE_PROVIDER_EXTERNAL_INFO_V1 {
     fn default() -> Self {
         Self {
             Version: FILE_PROVIDER_CURRENT_VERSION,
-            Algorithm: FILE_PROVIDER_COMPRESSION_XPRESS4K,
+            Algorithm: Compression::default().into(),
             Flags: 0,
         }
     }
