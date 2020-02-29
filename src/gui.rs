@@ -3,19 +3,16 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crossbeam_channel::{bounded, Receiver};
-use ctrlc;
+
 use dirs_sys::known_folder;
 use serde_derive::{Deserialize, Serialize};
-use serde_json;
 use web_view::*;
-
 use winapi::um::knownfolders;
-
 use crate::backend::Backend;
-use crate::compact::system_supports_compression;
+
+use crate::config::Config;
 use crate::folder::FolderSummary;
 use crate::persistence::{self, config};
-use crate::config::Config;
 
 // messages received from the GUI
 #[derive(Deserialize, Debug, Clone)]
@@ -99,7 +96,7 @@ impl<T> GuiWrapper<T> {
     }
 
     pub fn config(&self) {
-        let s = config().read().unwrap().current();;
+        let s = config().read().unwrap().current();
         self.send(&GuiResponse::Config {
             decimal: s.decimal,
             compression: s.compression.to_string(),
@@ -260,20 +257,6 @@ pub fn spawn_gui() {
         .expect("WebView");
 
     persistence::init();
-
-    if !system_supports_compression().unwrap_or_default() {
-        webview
-            .dialog()
-            .error(
-                "Unsupported OS",
-                "Compactor requires Windows 10 features, \
-                 and is completely untested on older systems.\n\n\
-                 Proceed if you fancy being a guinea pig.\n\n\
-                 Analysis will probably work, \
-                 compression and decompression will not.",
-            )
-            .ok();
-    }
 
     let gui = GuiWrapper::new(webview.handle());
     let mut backend = Backend::new(gui, from_gui_rx);
