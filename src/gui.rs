@@ -3,13 +3,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crossbeam_channel::{bounded, Receiver};
-
-use crate::backend::Backend;
 use dirs_sys::known_folder;
 use serde_derive::{Deserialize, Serialize};
 use web_view::*;
 use winapi::um::knownfolders;
 
+use crate::backend::Backend;
 use crate::config::Config;
 use crate::folder::FolderSummary;
 use crate::persistence::{self, config};
