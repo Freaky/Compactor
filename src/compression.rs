@@ -1,8 +1,11 @@
 use std::io;
 use std::path::PathBuf;
+use std::os::windows::fs::OpenOptionsExt;
 
 use compresstimator::Compresstimator;
 use crossbeam_channel::{Receiver, Sender};
+use filetime::FileTime;
+use winapi::um::winnt::{FILE_WRITE_ATTRIBUTES, FILE_READ_DATA};
 
 use crate::background::Background;
 use crate::background::ControlToken;
@@ -29,29 +32,44 @@ impl BackgroundCompactor {
     }
 }
 
+fn handle_file(file: &PathBuf, compression: Option<Compression>) -> io::Result<bool> {
+    let est = Compresstimator::with_block_size(8192);
+    let meta = std::fs::metadata(&file)?;
+    let handle = std::fs::OpenOptions::new()
+        .access_mode(FILE_WRITE_ATTRIBUTES | FILE_READ_DATA)
+        .open(&file)?;
+
+    let ret = match compression {
+        Some(compression) => match est.compresstimate(&handle, meta.len()) {
+            Ok(ratio) if ratio < 0.95 => compact::compress_file_handle(&handle, compression),
+            Ok(_) => Ok(false),
+            Err(e) => Err(e),
+        },
+        None => compact::uncompress_file_handle(&handle).map(|_| true),
+    };
+
+    let _ = filetime::set_file_handle_times(
+        &handle,
+        Some(FileTime::from_last_access_time(&meta)),
+        Some(FileTime::from_last_modification_time(&meta))
+    );
+
+    ret
+}
+
 impl Background for BackgroundCompactor {
     type Output = ();
     type Status = ();
 
     fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
-        let est = Compresstimator::with_block_size(8192);
-
         for file in &self.files_in {
             if control.is_cancelled_with_pause() {
                 break;
             }
 
             match file {
-                Some((file, len)) => {
-                    let ret = match self.compression {
-                        Some(compression) => match est.compresstimate_file_len(&file, len) {
-                            Ok(ratio) if ratio < 0.95 => compact::compress_file(&file, compression),
-                            Ok(_) => Ok(false),
-                            Err(e) => Err(e),
-                        },
-                        None => compact::uncompress_file(&file).map(|_| true),
-                    };
-
+                Some((file, _len)) => {
+                    let ret = handle_file(&file, self.compression);
                     if self.files_out.send((file, ret)).is_err() {
                         break;
                     }

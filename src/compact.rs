@@ -271,7 +271,10 @@ unsafe fn as_byte_slice<T: Sized + Copy>(p: &T) -> &[u8] {
 
 pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::io::Result<bool> {
     let file = std::fs::File::open(path)?;
+    compress_file_handle(&file, compression)
+}
 
+pub fn compress_file_handle(file: &std::fs::File, compression: Compression) -> std::io::Result<bool> {
     const LEN: usize = std::mem::size_of::<_WOF_EXTERNAL_INFO>()
         + std::mem::size_of::<_FILE_PROVIDER_EXTERNAL_INFO_V1>();
 
@@ -315,7 +318,10 @@ pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::
 
 pub fn uncompress_file<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
     let file = std::fs::File::open(path)?;
+    uncompress_file_handle(&file)
+}
 
+pub fn uncompress_file_handle(file: &std::fs::File) -> std::io::Result<()> {
     let mut bytes_returned: DWORD = 0;
 
     let ret = unsafe {
