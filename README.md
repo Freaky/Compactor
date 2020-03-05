@@ -128,7 +128,7 @@ Are you aware of any others?  Do let me know.
 
 ## Nerdy Technical Stuff
 
-Compactor is primarily written in [Rust].  The front-end is basically an embedded website driven by the [web-view] crate and my own fork of the underlying [webview] library.  It does *not* depend on any remote resources or open any ports.
+Compactor is primarily written in [Rust].  The front-end is basically an embedded website driven by the [web-view] crate.  It does *not* depend on any remote resources or open any ports.
 
 Under the hood it uses [`DeviceIoControl`] with [`FSCTL_SET_EXTERNAL_BACKING`] and [`FSCTL_DELETE_EXTERNAL_BACKING`], and a few functions from [WofApi] (Windows Overlay Filesystem).  This is, of course, in part thanks to the [winapi] crate.  Eventually I hope to get around to finishing off some of my bindings and contributing them back.
 
