@@ -274,7 +274,10 @@ pub fn compress_file<P: AsRef<Path>>(path: P, compression: Compression) -> std::
     compress_file_handle(&file, compression)
 }
 
-pub fn compress_file_handle(file: &std::fs::File, compression: Compression) -> std::io::Result<bool> {
+pub fn compress_file_handle(
+    file: &std::fs::File,
+    compression: Compression,
+) -> std::io::Result<bool> {
     const LEN: usize = std::mem::size_of::<_WOF_EXTERNAL_INFO>()
         + std::mem::size_of::<_FILE_PROVIDER_EXTERNAL_INFO_V1>();
 
