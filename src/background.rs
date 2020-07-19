@@ -1,6 +1,6 @@
+use crossbeam_channel::{Receiver, RecvTimeoutError, TryRecvError};
 use std::panic::{catch_unwind, RefUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, TryRecvError};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
@@ -102,7 +102,7 @@ impl<T, S> BackgroundHandle<T, S> {
         T: Send + Sync + 'static,
         S: Send + Sync + Clone + 'static,
     {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = crossbeam_channel::unbounded();
         let control = ControlToken::new();
         let inner_control = control.clone();
 
