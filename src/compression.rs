@@ -61,7 +61,7 @@ impl Background for BackgroundCompactor {
     type Output = ();
     type Status = ();
 
-    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
+    fn run(self, control: &ControlToken<Self::Status>) -> Self::Output {
         for file in &self.files_in {
             if control.is_cancelled_with_pause() {
                 break;

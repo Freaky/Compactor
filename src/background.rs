@@ -1,5 +1,5 @@
 use crossbeam_channel::{Receiver, RecvTimeoutError, TryRecvError};
-use std::panic::{catch_unwind, RefUnwindSafe};
+use std::panic::{catch_unwind, UnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -98,7 +98,7 @@ pub struct BackgroundHandle<T, S> {
 impl<T, S> BackgroundHandle<T, S> {
     pub fn spawn<K>(task: K) -> BackgroundHandle<T, S>
     where
-        K: Background<Output = T, Status = S> + RefUnwindSafe + Send + Sync + 'static,
+        K: Background<Output = T, Status = S> + UnwindSafe + Send + Sync + 'static,
         T: Send + Sync + 'static,
         S: Send + Sync + Clone + 'static,
     {
@@ -107,7 +107,7 @@ impl<T, S> BackgroundHandle<T, S> {
         let inner_control = control.clone();
 
         let handle = thread::spawn(move || {
-            let response = catch_unwind(|| task.run(&inner_control));
+            let response = catch_unwind(move || task.run(&inner_control));
             let _ = tx.send(response);
         });
 
@@ -180,7 +180,7 @@ pub trait Background: Send + Sync {
     type Output: Send + Sync;
     type Status: Send + Sync;
 
-    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output;
+    fn run(self, control: &ControlToken<Self::Status>) -> Self::Output;
 }
 
 #[cfg(test)]
@@ -195,7 +195,7 @@ mod tests {
         type Output = Result<u32, u32>;
         type Status = u32;
 
-        fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
+        fn run(self, control: &ControlToken<Self::Status>) -> Self::Output {
             let mut ticks = 0;
 
             while ticks < 100 && !control.is_cancelled_with_pause() {
