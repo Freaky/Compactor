@@ -1,11 +1,11 @@
 use std::io;
-use std::path::PathBuf;
 use std::os::windows::fs::OpenOptionsExt;
+use std::path::PathBuf;
 
 use compresstimator::Compresstimator;
 use crossbeam_channel::{Receiver, Sender};
 use filetime::FileTime;
-use winapi::um::winnt::{FILE_WRITE_ATTRIBUTES, FILE_READ_DATA};
+use winapi::um::winnt::{FILE_READ_DATA, FILE_WRITE_ATTRIBUTES};
 
 use crate::background::Background;
 use crate::background::ControlToken;
@@ -51,7 +51,7 @@ fn handle_file(file: &PathBuf, compression: Option<Compression>) -> io::Result<b
     let _ = filetime::set_file_handle_times(
         &handle,
         Some(FileTime::from_last_access_time(&meta)),
-        Some(FileTime::from_last_modification_time(&meta))
+        Some(FileTime::from_last_modification_time(&meta)),
     );
 
     ret
@@ -61,7 +61,7 @@ impl Background for BackgroundCompactor {
     type Output = ();
     type Status = ();
 
-    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
+    fn run(self, control: &ControlToken<Self::Status>) -> Self::Output {
         for file in &self.files_in {
             if control.is_cancelled_with_pause() {
                 break;

@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use filesize::file_real_size;
@@ -154,14 +153,14 @@ impl GroupInfo {
 #[derive(Debug)]
 pub struct FolderScan {
     path: PathBuf,
-    excludes: Mutex<GlobSet>,
+    excludes: GlobSet,
 }
 
 impl FolderScan {
     pub fn new<P: AsRef<Path>>(path: P, excludes: GlobSet) -> Self {
         Self {
             path: path.as_ref().to_path_buf(),
-            excludes: Mutex::new(excludes),
+            excludes,
         }
     }
 }
@@ -170,9 +169,9 @@ impl Background for FolderScan {
     type Output = Result<FolderInfo, FolderInfo>;
     type Status = (PathBuf, FolderSummary);
 
-    fn run(&self, control: &ControlToken<Self::Status>) -> Self::Output {
-        let mut ds = FolderInfo::new(&self.path);
-        let excludes = self.excludes.lock().expect("exclude lock");
+    fn run(self, control: &ControlToken<Self::Status>) -> Self::Output {
+        let FolderScan { path, excludes } = self;
+        let mut ds = FolderInfo::new(&path);
         let incompressible = pathdb();
         let mut incompressible = incompressible.write().unwrap();
         let _ = incompressible.load();
@@ -186,7 +185,7 @@ impl Background for FolderScan {
         // 4. Grab metadata - should be infallible on Windows, it comes with the
         //    DirEntry.
         // 5. GetCompressedFileSizeW() or skip.
-        let walker = WalkDir::new(&self.path)
+        let walker = WalkDir::new(&path)
             .into_iter()
             .filter_entry(|e| e.file_type().is_file() || !excludes.is_match(e.path()))
             .filter_map(|e| e.map_err(|e| eprintln!("Error: {:?}", e)).ok())
@@ -198,7 +197,7 @@ impl Background for FolderScan {
         for (count, (entry, metadata, physical)) in walker {
             let shortname = entry
                 .path()
-                .strip_prefix(&self.path)
+                .strip_prefix(&path)
                 .unwrap_or_else(|_e| entry.path())
                 .to_path_buf();
 
