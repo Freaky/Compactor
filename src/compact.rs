@@ -1,7 +1,7 @@
 #![allow(non_camel_case_types, non_snake_case, dead_code)]
 
 use std::convert::TryFrom;
-use std::ffi::{CString, OsStr};
+use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::os::windows::io::AsRawHandle;
 use std::path::Path;
@@ -165,9 +165,20 @@ impl From<Compression> for ULONG {
     }
 }
 
+macro_rules! c_str {
+    ($lit:expr) => {{
+        let bytes: &'static [u8] = concat!($lit, "\0").as_bytes();
+        if (cfg!(debug_assertions)) {
+            std::ffi::CStr::from_bytes_with_nul(bytes).unwrap()
+        } else {
+            unsafe { std::ffi::CStr::from_bytes_with_nul_unchecked(bytes) }
+        }
+    }};
+}
+
 pub fn system_supports_compression() -> std::io::Result<bool> {
-    let dll = CString::new("WofUtil.dll").unwrap();
-    let path = CString::new("\\").unwrap();
+    let dll = c_str!("WofUtil.dll");
+    let path = c_str!(r"\");
     let mut handle = 0;
 
     let len = unsafe { GetFileVersionInfoSizeA(dll.as_ptr(), &mut handle) };
