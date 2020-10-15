@@ -14,14 +14,14 @@ use crate::compact::{self, Compression};
 #[derive(Debug)]
 pub struct BackgroundCompactor {
     compression: Option<Compression>,
-    files_in: Receiver<Option<(PathBuf, u64)>>,
+    files_in: Receiver<(PathBuf, u64)>,
     files_out: Sender<(PathBuf, io::Result<bool>)>,
 }
 
 impl BackgroundCompactor {
     pub fn new(
         compression: Option<Compression>,
-        files_in: Receiver<Option<(PathBuf, u64)>>,
+        files_in: Receiver<(PathBuf, u64)>,
         files_out: Sender<(PathBuf, io::Result<bool>)>,
     ) -> Self {
         Self {
@@ -67,16 +67,10 @@ impl Background for BackgroundCompactor {
                 break;
             }
 
-            match file {
-                Some((file, _len)) => {
-                    let ret = handle_file(&file, self.compression);
-                    if self.files_out.send((file, ret)).is_err() {
-                        break;
-                    }
-                }
-                None => {
-                    break;
-                }
+            let file = file.0;
+            let ret = handle_file(&file, self.compression);
+            if self.files_out.send((file, ret)).is_err() {
+                break;
             }
         }
     }
