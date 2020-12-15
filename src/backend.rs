@@ -41,13 +41,7 @@ impl<T> Backend<T> {
         loop {
             match self.msg.recv() {
                 Ok(GuiRequest::ChooseFolder) => {
-                    let path = self
-                        .gui
-                        .choose_folder()
-                        .recv()
-                        .ok()
-                        .and_then(Result::ok)
-                        .and_then(|x| x);
+                    let path = self.gui.choose_folder().recv().ok().flatten();
 
                     if let Some(path) = path {
                         self.gui.folder(&path);

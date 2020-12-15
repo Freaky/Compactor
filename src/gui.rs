@@ -89,7 +89,7 @@ impl<T> GuiWrapper<T> {
     pub fn version(&self) {
         let version = GuiResponse::Version {
             date: env!("VERGEN_BUILD_DATE").to_string(),
-            version: format!("{}-{}", env!("VERGEN_SEMVER"), env!("VERGEN_SHA_SHORT")),
+            version: format!("{}-{}", env!("CARGO_PKG_VERSION"), env!("VERGEN_SHA_SHORT")),
         };
         self.send(&version);
     }
@@ -140,13 +140,20 @@ impl<T> GuiWrapper<T> {
         self.send(&GuiResponse::Compacting);
     }
 
-    pub fn choose_folder(&self) -> Receiver<WVResult<Option<PathBuf>>> {
-        let (tx, rx) = bounded::<WVResult<Option<PathBuf>>>(1);
-        let _ = self.0.dispatch(move |wv| {
-            let _ = tx.send(wv.dialog().choose_directory(
-                "Select Directory",
-                known_folder(&knownfolders::FOLDERID_ProgramFiles).expect("Program files path"),
-            ));
+    pub fn choose_folder(&self) -> Receiver<Option<PathBuf>> {
+        let (tx, rx) = bounded::<Option<PathBuf>>(1);
+        let _ = self.0.dispatch(move |_| {
+            let folder = known_folder(&knownfolders::FOLDERID_ProgramFiles);
+            let folder = folder.and_then(|path| path.to_str().map(str::to_string)).unwrap_or_default();
+            let params = wfd::DialogParams {
+                options: wfd::FOS_PICKFOLDERS,
+                title: "Select a directory",
+                default_folder: &folder,
+                ..Default::default()
+            };
+            let _ = tx.send(
+                wfd::open_dialog(params).map(|res| res.selected_file_path).ok()
+            );
             Ok(())
         });
 
@@ -161,8 +168,6 @@ pub fn spawn_gui() {
         r.store(false, Ordering::SeqCst);
     })
     .expect("Error setting Ctrl-C handler");
-
-    set_dpi_aware();
 
     let html = format!(
         include_str!("ui/index.html"),
@@ -179,7 +184,7 @@ pub fn spawn_gui() {
     let mut webview = web_view::builder()
         .title("Compactor")
         .content(Content::Html(html))
-        .size(1000, 550)
+        .size(750, 430)
         .resizable(true)
         .debug(true)
         .user_data(())
@@ -200,7 +205,11 @@ pub fn spawn_gui() {
                     };
 
                     if let Err(msg) = s.globset() {
-                        webview.dialog().error("Settings Error", msg).ok();
+                        tinyfiledialogs::message_box_ok(
+                            "Settings Error",
+                            &msg,
+                            tinyfiledialogs::MessageBoxIcon::Error,
+                        );
                     } else {
                         message_dispatch(
                             &mut webview,
@@ -214,10 +223,11 @@ pub fn spawn_gui() {
                         let mut c = c.write().unwrap();
                         c.replace(s);
                         if let Err(e) = c.save() {
-                            webview
-                                .dialog()
-                                .error("Settings Error", format!("Error saving settings: {:?}", e))
-                                .ok();
+                            tinyfiledialogs::message_box_ok(
+                                "Settings Error",
+                                &format!("Error saving settings: {:?}", e),
+                                tinyfiledialogs::MessageBoxIcon::Error,
+                            );
                         }
                     }
                 }
@@ -236,10 +246,11 @@ pub fn spawn_gui() {
                     let mut c = c.write().unwrap();
                     c.replace(s);
                     if let Err(e) = c.save() {
-                        webview
-                            .dialog()
-                            .error("Settings Error", format!("Error saving settings: {:?}", e))
-                            .ok();
+                        tinyfiledialogs::message_box_ok(
+                            "Settings Error",
+                            &format!("Error saving settings: {:?}", e),
+                            tinyfiledialogs::MessageBoxIcon::Error,
+                        );
                     }
                 }
                 Ok(msg) => {
@@ -287,10 +298,4 @@ fn message_dispatch<T>(wv: &mut web_view::WebView<'_, T>, msg: &GuiResponse) {
     );
 
     wv.eval(&js).ok();
-}
-
-fn set_dpi_aware() {
-    use winapi::um::shellscalingapi::{SetProcessDpiAwareness, PROCESS_SYSTEM_DPI_AWARE};
-
-    unsafe { SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE) };
 }
