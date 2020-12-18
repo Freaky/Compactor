@@ -3,7 +3,7 @@ use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use filesize::file_real_size;
+use filesize::PathExt;
 use globset::GlobSet;
 use serde_derive::Serialize;
 use walkdir::WalkDir;
@@ -191,7 +191,7 @@ impl Background for FolderScan {
             .filter_map(|e| e.map_err(|e| eprintln!("Error: {:?}", e)).ok())
             .filter(|e| e.file_type().is_file())
             .filter_map(|e| e.metadata().map(|md| (e, md)).ok())
-            .filter_map(|(e, md)| file_real_size(e.path()).map(|s| (e, md, s)).ok())
+            .filter_map(|(e, md)| e.path().size_on_disk().map(|s| (e, md, s)).ok())
             .enumerate();
 
         for (count, (entry, metadata, physical)) in walker {

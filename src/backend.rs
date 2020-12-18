@@ -4,6 +4,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use crossbeam_channel::{bounded, Receiver, RecvTimeoutError};
+use filesize::PathExt;
 
 use crate::background::BackgroundHandle;
 use crate::compression::BackgroundCompactor;
@@ -221,8 +222,7 @@ impl<T> Backend<T> {
                         done += 1;
                         match result {
                             Ok(true) => {
-                                fi.physical_size =
-                                    filesize::file_real_size(&path).unwrap_or(fi.physical_size);
+                                fi.physical_size = path.size_on_disk().unwrap_or(fi.physical_size);
 
                                 // Irritatingly Windows can return success when it fails.
                                 if fi.physical_size == fi.logical_size {
