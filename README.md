@@ -87,6 +87,14 @@ This generally doesn't matter much for application folders, but it's not great f
 
 If a game uses large files and in-place binary patching for updates, it might be worth adding to the exclusions list.
 
+### Compatibility with Other Operating Systems
+
+Compaction is only supported on Windows 10 - earlier versions of Windows will be unable to access compressed files, though the rest of the filesystem should remain fully accessible.
+
+Linux and other operating systems will experience similar issues if the NTFS driver they're using lacks support.  As of time of writing, NTFS-3G has a [third-party plugin for the feature](https://github.com/ebiggers/ntfs-3g-system-compression).
+
+This is available on FreeBSD under [`sysutils/fusefs-ntfs-compression`](https://www.freshports.org/sysutils/fusefs-ntfs-compression/), while users of lesser platforms may need to [manually install it](https://wiki.archlinux.org/index.php/NTFS-3G#Compressed_files) like savages.
+
 ## Compression Results
 
 A totally-not-cherry-picked sample of compression results with the default settings:
