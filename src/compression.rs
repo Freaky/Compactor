@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use compresstimator::Compresstimator;
 use crossbeam_channel::{Receiver, Sender};
 use filetime::FileTime;
+use fs2::FileExt;
 use winapi::um::winnt::{FILE_READ_DATA, FILE_WRITE_ATTRIBUTES};
 
 use crate::background::Background;
@@ -39,6 +40,8 @@ fn handle_file(file: &PathBuf, compression: Option<Compression>) -> io::Result<b
         .access_mode(FILE_WRITE_ATTRIBUTES | FILE_READ_DATA)
         .open(&file)?;
 
+    handle.try_lock_exclusive()?;
+
     let ret = match compression {
         Some(compression) => match est.compresstimate(&handle, meta.len()) {
             Ok(ratio) if ratio < 0.95 => compact::compress_file_handle(&handle, compression),
@@ -53,6 +56,8 @@ fn handle_file(file: &PathBuf, compression: Option<Compression>) -> io::Result<b
         Some(FileTime::from_last_access_time(&meta)),
         Some(FileTime::from_last_modification_time(&meta)),
     );
+
+    handle.unlock()?;
 
     ret
 }
