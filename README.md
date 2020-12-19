@@ -1,6 +1,6 @@
 # Compactor
 
-## A friendly user interface to Windows 10 filesystem compression.
+## A friendly user interface to Windows 10 filesystem compression
 
 With modern lightweight compression algorithms running at gigabytes per second per core, it's practically a no-brainer to apply them to filesystems to make better use of storage and IO.
 
@@ -10,12 +10,14 @@ Compactor is here to plug that gap, with a simple GUI utility anyone can use.
 
 ![](https://i.imgur.com/A9si8Zh.png)
 
-## Installation [![v0.9.0](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.9.0) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
+## Installation [![v0.10.0](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.10.0) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
 
 Downloads are available from the [Github Releases](https://github.com/Freaky/Compactor/releases) page under *Assets*, or you can use these direct links:
 
-* [v0.9.0 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.9.0/Compactor-0.9.0-i686.zip)
-* [v0.9.0 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.9.0/Compactor-0.9.0.zip)
+* [v0.10.0 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.0/Compactor-0.10.0-i686.zip)
+* [v0.10.0 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.0/Compactor-0.10.0.zip)
+
+The 64-bit version is recommended for most users.
 
 If you get "*Windows protected your PC*" trying to run it, it's just [SmartScreen](https://www.pcworld.com/article/3197443/how-to-get-past-windows-defender-smartscreen-in-windows-10.html) upset the binaries aren't (yet) signed.  Click "*More info*" and "*Run anyway*" if you judge things to be above-board.
 
@@ -51,7 +53,7 @@ Written in [Rust], a modern compiled systems programming language from Mozilla, 
 
 ### Beta Software
 
-Compactor has received only limited testing.  I've used it extensively on my desktop and laptop without a problem, it's saved me *hundreds of gigabytes* of disk space.  Hopefully it will do the same for you.
+While it has been used successfully by thousands of people, Compactor should be used with care.  It is intended for compressing replacable software, not precious files.
 
 **Make backups**.  Report bugs.  Be nice.  You are reminded:
 
@@ -65,9 +67,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+It's in shouty legal text so you know I mean it.
+
+### Data Corruption
+
+There has been [one report][#40] of data corruption with open SQLite database files.  The author has been unable to reproduce this, but file locking was added to version 0.10 which should prevent them from being modified.
+
 ### Permissions
 
-Compactor currently has no mechanism to elevate its privileges using UAC for protected files.  If you're using a limited account you might need to run it as an Administrator, or a user with similar privileges.
+Compactor currently has no mechanism to elevate its privileges using UAC for protected files.  If you're using a limited account you may need to run the program with elevated permissions.
 
 Be careful what you compress.  System files should be skipped automatically, and the Windows folder should be in the list of default exclusions (if you want to compact Windows, check out its [CompactOS] feature), but you almost certainly don't want to blindly run this across your entire `C:\` drive.
 
@@ -101,28 +109,24 @@ A totally-not-cherry-picked sample of compression results with the default setti
 
 A more comprehensive database of results is [maintained by the CompactGUI project](https://docs.google.com/spreadsheets/d/14CVXd6PTIYE9XlNpRsxJUGaoUzhC5titIC1rzQHI4yI/edit#gid=0).
 
-
 ## Future
 
-In the fairly-concrete TODO:
+There are many things I want to do with Compactor in future.  These include, but are certainly not limited to:
 
-* Hook up an interface to the saved paths database (count, option to clear it).
-* Recompression, for changing compression modes without manually decompressing/recompressing.
+* Make analysis optional.  It isn't fundamentally needed.
+* Multithreaded analysis/compaction for SSDs.
+* GUI rework of some description.  The longer I leave this the better Rust should get at it :P
 * Installer.  Why does this involve so much XML oh god.
-* Sign the binaries/installer.  If I give away my code I get a free one, right?
-* Double-check the default exclusions list.  Should be able to do something with the compresstimation code to verify them.
+* Sign the binaries/installer.  This appears to involve money.
+* Scheduled task or a background service for set-it-and-forget-it operation.
 
-More tentative:
-
-* Scheduled task or a background service to periodically recompress selected directories.
-* Write bindings to Microsoft's [Compression API], add benchmarks for the various compression modes to help users decide which is most appropriate for their system.
-* Examine [overlapped IO], see if we can get more information and control out of the compression process (per-file progress and cancellation).
+Feature requests can be discussed in the [forum](https://github.com/Freaky/Compactor/discussions), or you may open [an issue](https://github.com/Freaky/Compactor/issues).
 
 ## Alternatives
 
 * [`compact.exe`] is a command-line tool that ships with Windows 10.  If you're familiar with the command line and batch files, maybe you'd prefer that. Weirdo.
 * [CompactGUI] is a popular Visual Basic program that shells out to `compact.exe` to do its work, instead of using the Windows API directly as Compactor does.  It has some... performance issues, particularly with larger folders.
-* NTFS has supported [LZNT1 compression][lznt1] since 1995, hidden behind a checkbox under `Properties` &rarr; `Advanced Attributes`.  It's less flexible and has a reputation for poor performance, but is more set-it-and-forget-it.
+* NTFS has supported [LZNT1 compression][lznt1] since 1995, hidden behind a checkbox under `Properties` &rarr; `Advanced Attributes`.  It's less flexible and has a reputation for poor performance and issues with fragmentation, but is more set-it-and-forget-it.
 
 Are you aware of any others?  Do let me know.
 
@@ -161,3 +165,4 @@ You can find him on Twitter at [@blaagh], or bug him on IRC as `Freaky` on FreeN
 [overlapped IO]: https://docs.microsoft.com/en-us/windows/desktop/sync/synchronization-and-overlapped-input-and-output
 [compresstimator]: https://github.com/Freaky/compresstimator
 [lznt1]: https://en.wikipedia.org/wiki/NTFS#File_compression
+[#40]: https://github.com/Freaky/Compactor/issues/40
