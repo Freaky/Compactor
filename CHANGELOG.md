@@ -2,16 +2,16 @@
 
 ## [0.10.0] - 2020-12-19
 
-### Fixed
-
-- Exclusively lock files prior to compaction (should fix #40)
-
 ### Changed
 
 - Update dependencies
 - Minor UI tweaks due to changes in DPI handling
 - Migrate to new dialog crates
 - More small internal improvements by @Dr-Emann, thanks! ([#30], [#32])
+
+### Fixed
+
+- Exclusively lock files prior to compaction (should fix #40)
 
 ## [0.9.0] - 2020-03-03
 
