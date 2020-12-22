@@ -10,12 +10,12 @@ Compactor is here to plug that gap, with a simple GUI utility anyone can use.
 
 ![](https://i.imgur.com/A9si8Zh.png)
 
-## Installation [![v0.10.0](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.10.0) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
+## Installation [![v0.10.1](https://img.shields.io/github/release-pre/Freaky/Compactor.svg)](https://github.com/Freaky/Compactor/releases/tag/v0.10.1) [![Downloads](https://img.shields.io/github/downloads/Freaky/Compactor/total.svg)](https://github.com/Freaky/Compactor/releases)
 
 Downloads are available from the [Github Releases](https://github.com/Freaky/Compactor/releases) page under *Assets*, or you can use these direct links:
 
-* [v0.10.0 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.0/Compactor-0.10.0-i686.zip)
-* [v0.10.0 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.0/Compactor-0.10.0.zip)
+* [v0.10.1 32-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.1/Compactor-0.10.1-i686.zip)
+* [v0.10.1 64-bit](https://github.com/Freaky/Compactor/releases/download/v0.10.1/Compactor-0.10.1.zip)
 
 The 64-bit version is recommended for most users.
 
