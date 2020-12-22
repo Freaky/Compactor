@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "backtrace",
  "compresstimator",
@@ -921,8 +921,7 @@ checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 [[package]]
 name = "web-view"
 version = "0.7.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "042fdd5e2aac30c4d790545ac8dc3d426982cd01477556386fdd7b763fe87956"
+source = "git+https://github.com/Freaky/web-view?branch=blocking-step#30a35ca2f0a5e86b4de53789b6e05827491ca4e9"
 dependencies = [
  "boxfnonce",
  "tinyfiledialogs",
@@ -955,8 +954,7 @@ dependencies = [
 [[package]]
 name = "webview-sys"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d938595ad694c40284038a2b779d47c1e971dc4d33f008a907ad425762312f48"
+source = "git+https://github.com/Freaky/web-view?branch=blocking-step#30a35ca2f0a5e86b4de53789b6e05827491ca4e9"
 dependencies = [
  "cc",
  "gdk-sys",
