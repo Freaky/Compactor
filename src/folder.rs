@@ -244,6 +244,7 @@ impl Background for FolderScan {
 fn it_walks() {
     use crate::background::BackgroundHandle;
     use crate::config::Config;
+    use crossbeam_channel::RecvTimeoutError;
 
     let gs = Config::default().globset().unwrap();
     let scanner = FolderScan::new("C:\\Games", gs);
@@ -253,13 +254,20 @@ fn it_walks() {
     let deadline = Instant::now() + Duration::from_millis(2000);
 
     loop {
-        let ret = task.wait_timeout(Duration::from_millis(100));
-
-        if ret.is_some() {
-            println!("Scanned: {:?}", ret);
-            break;
-        } else {
-            println!("Status: {:?}", task.status());
+        let ret = task.result_chan().recv_timeout(Duration::from_millis(100));
+        match ret {
+            Ok(ret) => {
+                // Unwrap thread result
+                let ret: Result<FolderInfo, FolderInfo> = ret.unwrap();
+                println!("Scanned: {:?}", ret);
+                break;
+            }
+            Err(RecvTimeoutError::Timeout) => {
+                println!("Status: {:?}", task.status());
+            }
+            Err(RecvTimeoutError::Disconnected) => {
+                panic!("Unexpected disconnect");
+            }
         }
 
         if Instant::now() > deadline {
