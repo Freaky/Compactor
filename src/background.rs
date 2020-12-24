@@ -1,4 +1,4 @@
-use crossbeam_channel::{Receiver, RecvTimeoutError, TryRecvError};
+use crossbeam_channel::Receiver;
 use std::panic::{catch_unwind, UnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -8,7 +8,6 @@ use std::thread;
 ///
 /// This is very similar to ffi_helper's Task
 /// https://github.com/Michael-F-Bryan/ffi_helpers
-use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct ControlToken<S>(Arc<ControlTokenInner<S>>);
@@ -120,20 +119,8 @@ impl<T, S> BackgroundHandle<T, S> {
         }
     }
 
-    pub fn poll(&self) -> Option<T> {
-        match self.result.try_recv() {
-            Ok(value) => Some(value.unwrap()),
-            Err(TryRecvError::Empty) => None,
-            Err(e) => panic!("{:?}", e),
-        }
-    }
-
-    pub fn wait_timeout(&self, wait: Duration) -> Option<T> {
-        match self.result.recv_timeout(wait) {
-            Ok(value) => Some(value.unwrap()),
-            Err(RecvTimeoutError::Timeout) => None,
-            Err(e) => panic!("{:?}", e),
-        }
+    pub fn result_chan(&self) -> &Receiver<std::thread::Result<T>> {
+        &self.result
     }
 
     pub fn wait(self) -> T {
@@ -186,6 +173,7 @@ pub trait Background: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crossbeam_channel::TryRecvError;
     use std::time::Duration;
 
     #[derive(Debug, Clone, Copy)]
@@ -217,8 +205,8 @@ mod tests {
 
         for _ in 0..10 {
             thread::sleep(Duration::from_millis(10));
-            let got = handle.poll();
-            assert!(got.is_none());
+            let got = handle.result_chan().try_recv();
+            assert!(matches!(got, Err(TryRecvError::Empty)));
         }
 
         handle.cancel();
@@ -239,16 +227,16 @@ mod tests {
 
         for _ in 0..10 {
             thread::sleep(Duration::from_millis(10));
-            let got = handle.poll();
-            assert!(got.is_none());
+            let got = handle.result_chan().try_recv();
+            assert!(matches!(got, Err(TryRecvError::Empty)));
         }
 
         handle.resume();
 
         for _ in 0..10 {
             thread::sleep(Duration::from_millis(10));
-            let got = handle.poll();
-            assert!(got.is_none());
+            let got = handle.result_chan().try_recv();
+            assert!(matches!(got, Err(TryRecvError::Empty)));
         }
 
         handle.cancel();
