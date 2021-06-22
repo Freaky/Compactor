@@ -69,6 +69,7 @@ impl Default for Config {
                 "*.xnb",
                 "*.xlsx",
                 "*.xz",
+                "*.zip",
                 "*.zst",
                 "*.zstd",
             ]
