@@ -154,7 +154,7 @@ Compactor is written by [Thomas Hurst], a nerdy, aloof weirdo from the north-eas
 
 He mostly works with FreeBSD and focuses on Unix platforms, but uses Windows because he plays games instead of having a social life.
 
-You can find him on Twitter at [@blaagh], or bug him on IRC as `Freaky` on FreeNode.
+You can find him on Mastodon at [@Freaky@hachyderm.io], or bug him on IRC as `Freaky` on [libera.chat].
 
 [`compact.exe`]: https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/compact
 [Rust]: https://www.rust-lang.org/
@@ -169,7 +169,8 @@ You can find him on Twitter at [@blaagh], or bug him on IRC as `Freaky` on FreeN
 [winapi]: https://github.com/retep998/winapi-rs
 [CompactOS]: https://technet.microsoft.com/en-us/windows/dn940129(v=vs.60)
 [Thomas Hurst]: https://hur.st/
-[@blaagh]: https://twitter.com/blaagh
+[@Freaky@hachyderm.io]: https://hachyderm.io/@Freaky
+[libera.chat]: https://libera.chat/
 [overlapped IO]: https://docs.microsoft.com/en-us/windows/desktop/sync/synchronization-and-overlapped-input-and-output
 [compresstimator]: https://github.com/Freaky/compresstimator
 [lznt1]: https://en.wikipedia.org/wiki/NTFS#File_compression
